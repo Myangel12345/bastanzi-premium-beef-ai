@@ -1,0 +1,6 @@
+{
+  "name": "Bastanzi Premium Beef Co.",
+  "description": "Luxury ranch-raised grass & grain-fed beef shares delivered direct from pasture to table.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
