@@ -16,6 +16,7 @@ export interface ShareTier {
   bestFor: string;
   depositAmount: number;
   featured?: boolean;
+  image?: string;
   cutSummary: {
     steaks: string[];
     roastsAndSlow: string[];

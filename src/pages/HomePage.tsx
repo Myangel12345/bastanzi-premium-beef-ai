@@ -3,6 +3,10 @@ import { BRAND_IMAGES, BEEF_SHARE_TIERS, REVIEWS, BUSINESS_INFO } from '../data/
 import { ShareSize } from '../types';
 import FreezerCalculator from '../components/FreezerCalculator';
 import SeoHead from '../components/SeoHead';
+import WhyChooseUsSection from '../components/WhyChooseUsSection';
+import RanchToFreezerSection from '../components/RanchToFreezerSection';
+import PremiumCutsSection from '../components/PremiumCutsSection';
+import FreezerPackagingSection from '../components/FreezerPackagingSection';
 
 interface HomePageProps {
   setActiveTab: (tab: string) => void;
@@ -11,242 +15,135 @@ interface HomePageProps {
 
 export default function HomePage({ setActiveTab, onSelectShare }: HomePageProps) {
   return (
-    <div className="bg-[#0a0a0a] text-white min-h-screen">
+    <div className="bg-[#0a180f] text-[#f7f2e8] min-h-screen">
       <SeoHead
-        title="Bastanzi Premium Beef Co. | Montana Ranch Dry-Aged Beef Shares"
-        description="Pasture-raised, 21-day dry aged luxury beef shares from Bozeman, Montana. Full, Half, Quarter & Eighth shares delivered nationwide."
+        title="Bastanzi Premium Beef Co. | Pasture-Raised Dry-Aged Beef Shares"
+        description="Pasture-raised, 21-day dry aged luxury beef shares. Proudly serving Phoenix, Scottsdale, Paradise Valley, Gilbert, Chandler, Mesa, Cave Creek, Carefree, and nationwide."
       />
 
       {/* Hero Section */}
-      <section className="relative min-h-[80vh] flex flex-col items-center justify-center text-center px-6 sm:px-12 py-20 border-b border-[#C5A028]/20 overflow-hidden">
-        {/* Hero Background Image with dark monochrome filter */}
+      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden border-b border-emerald-900/60 bg-[#08130c]">
+        {/* Hero Background Image */}
         <div className="absolute inset-0 z-0">
           <img
             src={BRAND_IMAGES.heroRanch}
-            alt="Bastanzi Montana Ranch"
-            className="w-full h-full object-cover opacity-20 filter grayscale contrast-125"
+            alt="Bastanzi Cattle Ranch"
+            className="w-full h-full object-cover opacity-35 scale-105 transform animate-pulse duration-10000"
             referrerPolicy="no-referrer"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-[#0a0a0a]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a180f] via-[#0a180f]/70 to-transparent" />
+          <div className="absolute inset-0 bg-radial-vignette opacity-80" />
         </div>
 
         {/* Hero Content Overlay */}
-        <div className="relative z-10 max-w-5xl mx-auto space-y-6">
-          <span className="text-[10px] sm:text-xs font-mono uppercase tracking-[0.3em] text-[#C5A028] bg-[#C5A028]/10 px-4 py-1.5 rounded-full border border-[#C5A028]/30 inline-block">
-            Sustainably Raised • Locally Sourced • Exceptionally Cut
-          </span>
+        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center pt-16 pb-20 space-y-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-900/80 border border-amber-500/40 text-amber-300 text-xs font-mono uppercase tracking-widest backdrop-blur-md">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>Pasture to Table • 21-Day Cedar Dry Aged</span>
+          </div>
 
-          <h1 className="font-serif text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white leading-[1.1] max-w-4xl mx-auto">
-            The Gold Standard of Beef
+          <h1 className="font-serif text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight text-amber-100 leading-[1.1] max-w-4xl mx-auto">
+            Ranch Luxury. Unrivaled Marbling.
           </h1>
 
-          <p className="text-[#C5A028] font-serif italic text-lg sm:text-2xl opacity-90 tracking-wide max-w-3xl mx-auto">
-            Montana pasture-raised, 21-day dry-aged Black Angus beef from Gallatin Valley to your table.
+          <p className="text-stone-300 text-base sm:text-xl font-light leading-relaxed max-w-2xl mx-auto">
+            Reserve your share of certified pasture-raised, small-batch dry-aged beef. Hand-raised with zero added hormones and delivered directly to your doorstep.
           </p>
 
-          <p className="text-zinc-400 text-sm sm:text-base font-light leading-relaxed max-w-2xl mx-auto">
-            Reserve your share of certified pasture-raised, small-batch dry-aged beef. Hand-raised with zero added hormones or artificial additives and delivered nationwide.
-          </p>
+          {/* Service Areas Highlight Banner */}
+          <div className="bg-[#102218]/90 border border-amber-500/30 rounded-xl p-3 max-w-3xl mx-auto backdrop-blur-md">
+            <span className="text-[10px] font-mono text-amber-400 uppercase tracking-widest block mb-1">
+              PROUDLY SERVING LOCAL ARIZONA COMMUNITIES & NATIONWIDE
+            </span>
+            <p className="text-xs text-amber-100 font-serif">
+              Phoenix • Scottsdale • Paradise Valley • Gilbert • Chandler • Mesa • Cave Creek • Carefree
+            </p>
+          </div>
 
-          {/* Pricing Highlight Badges */}
-          <div className="pt-2 flex flex-wrap items-center justify-center gap-3 text-xs text-zinc-300 font-serif">
-            <span className="px-3 py-1.5 bg-[#111111] border border-[#C5A028]/30 text-xs">
-              Eighth Share: <strong className="text-[#C5A028]">$450 – $550</strong>
+          {/* Pricing Highlight Badge */}
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-3 text-xs text-amber-200 font-serif">
+            <span className="px-3 py-1 bg-[#12241a] border border-emerald-800/60 rounded-lg">
+              Eighth Share: <strong className="text-amber-400">$450–$550</strong>
             </span>
-            <span className="px-3 py-1.5 bg-[#111111] border border-[#C5A028]/30 text-xs">
-              Quarter Share: <strong className="text-[#C5A028]">$850 – $1,050</strong>
+            <span className="px-3 py-1 bg-[#12241a] border border-emerald-800/60 rounded-lg">
+              Quarter Share: <strong className="text-amber-400">$850–$1,050</strong>
             </span>
-            <span className="px-3 py-1.5 bg-[#111111] border border-[#C5A028]/30 text-xs">
-              Half Share: <strong className="text-[#C5A028]">$1,650 – $2,085</strong>
+            <span className="px-3 py-1 bg-[#12241a] border border-emerald-800/60 rounded-lg">
+              Half Share: <strong className="text-amber-400">$1,650–$2,085</strong>
             </span>
-            <span className="px-3 py-1.5 bg-[#111111] border border-[#C5A028]/30 text-xs">
-              Full Share: <strong className="text-[#C5A028]">$3,300 – $4,200</strong>
+            <span className="px-3 py-1 bg-[#12241a] border border-emerald-800/60 rounded-lg">
+              Full Share: <strong className="text-amber-400">$3,300–$4,200</strong>
             </span>
           </div>
 
           {/* CTA Group */}
-          <div className="pt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
             <button
               onClick={() => setActiveTab('reservation')}
-              className="w-full sm:w-auto px-8 py-4 bg-[#C5A028] text-black font-bold uppercase text-[10px] sm:text-xs tracking-widest hover:bg-[#d6af30] transition-colors shadow-lg shadow-[#C5A028]/20 flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-8 py-4 bg-amber-500 hover:bg-amber-400 text-emerald-950 font-serif font-bold text-sm uppercase tracking-widest rounded-full shadow-2xl shadow-amber-500/20 hover:scale-105 transition-all flex items-center justify-center gap-2"
             >
-              <span>Reserve Allocation</span>
+              <span>Reserve Your Beef Share</span>
               <ArrowRight className="w-4 h-4" />
             </button>
             <button
               onClick={() => setActiveTab('shares')}
-              className="w-full sm:w-auto px-8 py-4 border border-[#C5A028] text-[#C5A028] uppercase text-[10px] sm:text-xs tracking-widest hover:bg-[#C5A028] hover:text-black transition-colors flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-8 py-4 bg-[#12241a]/90 hover:bg-[#182e21] text-amber-200 border border-emerald-800/60 font-serif font-semibold text-sm uppercase tracking-widest rounded-full backdrop-blur-md transition-all flex items-center justify-center gap-2"
             >
-              <span>Explore Share Tiers</span>
-              <ChevronRight className="w-4 h-4" />
+              <span>Explore Share Sizes</span>
+              <ChevronRight className="w-4 h-4 text-amber-400" />
             </button>
           </div>
 
           {/* Trust Indicators */}
-          <div className="pt-8 border-t border-[#C5A028]/20 max-w-3xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-4 text-[11px] text-zinc-400 uppercase tracking-wider">
+          <div className="pt-8 border-t border-emerald-900/60 max-w-3xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs text-stone-300 font-light">
             <div className="flex items-center justify-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-[#C5A028]" />
-              <span>100% Montana Born</span>
+              <ShieldCheck className="w-4 h-4 text-amber-400" />
+              <span>100% Pasture Raised</span>
             </div>
             <div className="flex items-center justify-center gap-1.5">
-              <Clock className="w-4 h-4 text-[#C5A028]" />
+              <Clock className="w-4 h-4 text-amber-400" />
               <span>21-Day Cedar Dry Aged</span>
             </div>
             <div className="flex items-center justify-center gap-1.5">
-              <Award className="w-4 h-4 text-[#C5A028]" />
-              <span>No Added Hormones</span>
+              <Award className="w-4 h-4 text-amber-400" />
+              <span>Zero Added Hormones</span>
             </div>
             <div className="flex items-center justify-center gap-1.5">
-              <Truck className="w-4 h-4 text-[#C5A028]" />
+              <Truck className="w-4 h-4 text-amber-400" />
               <span>Insulated Nationwide</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 4-Column Sophisticated Beef Shares Grid */}
-      <section className="bg-[#0a0a0a] border-b border-[#C5A028]/20">
-        <div className="border-b border-[#C5A028]/20 px-8 py-8 text-center">
-          <span className="text-[10px] uppercase tracking-[0.3em] text-[#C5A028] font-mono block mb-2">
-            HERD RESERVATION SELECTION
-          </span>
-          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white">
-            Choose Your Seasonal Beef Share
-          </h2>
-        </div>
+      {/* NEW SECTION 1: Why Choose Us */}
+      <WhyChooseUsSection />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-[#C5A028]/20">
-          {/* Full Share */}
-          <div className="p-8 flex flex-col justify-between hover:bg-[#151515] transition-colors bg-[#0a0a0a]">
-            <div>
-              <span className="text-[10px] uppercase tracking-widest text-[#C5A028] block">01 — Full Share</span>
-              <h3 className="font-serif text-2xl mt-2 font-bold text-amber-100">The Heritage Reserve</h3>
-              <p className="text-xs mt-3 text-zinc-400 leading-relaxed">
-                The complete ranch-to-table experience. 400-500 lbs of dry-aged prime steaks, roasts, and artisan burger.
-              </p>
-              <div className="mt-4 pt-4 border-t border-[#C5A028]/10 text-xs space-y-1.5 text-zinc-400">
-                <p>• Custom butcher cut sheet consultation</p>
-                <p>• Requires 16–20 cu. ft. freezer capacity</p>
-                <p>• Free nationwide insulated shipping</p>
-              </div>
-            </div>
-            <div className="mt-8 pt-4 border-t border-[#C5A028]/20">
-              <p className="font-serif text-2xl font-bold text-white">$3,300 – $4,200</p>
-              <p className="text-[10px] text-[#C5A028] uppercase tracking-widest mt-0.5">$600 refundable deposit</p>
-              <button
-                onClick={() => onSelectShare('Full')}
-                className="mt-4 w-full py-3 border border-[#C5A028] text-[#C5A028] uppercase text-[10px] tracking-widest font-bold hover:bg-[#C5A028] hover:text-black transition-colors"
-              >
-                Select Full Share
-              </button>
-            </div>
-          </div>
+      {/* NEW SECTION 2: Ranch to Freezer Journey */}
+      <RanchToFreezerSection onReserveClick={() => setActiveTab('reservation')} />
 
-          {/* Half Share - Popular */}
-          <div className="p-8 flex flex-col justify-between bg-[#111111] hover:bg-[#151515] transition-colors relative">
-            <div className="absolute top-0 right-0 bg-[#C5A028] text-black font-bold uppercase text-[9px] tracking-widest px-3 py-1">
-              Popular Choice
-            </div>
-            <div>
-              <span className="text-[10px] uppercase tracking-widest text-[#C5A028] block">02 — Half Share</span>
-              <h3 className="font-serif text-2xl mt-2 font-bold text-amber-100">The Family Provisions</h3>
-              <p className="text-xs mt-3 text-zinc-400 leading-relaxed">
-                Ideal for families. 200-250 lbs of diverse grass-fed or grain-finished prime steaks and provisions.
-              </p>
-              <div className="mt-4 pt-4 border-t border-[#C5A028]/10 text-xs space-y-1.5 text-zinc-400">
-                <p>• Choice of Grass-Fed or Grain-Finished</p>
-                <p>• Requires 8–10 cu. ft. freezer space</p>
-                <p>• 21-Day cedar dry aging included</p>
-              </div>
-            </div>
-            <div className="mt-8 pt-4 border-t border-[#C5A028]/20">
-              <p className="font-serif text-2xl font-bold text-white">$1,650 – $2,085</p>
-              <p className="text-[10px] text-[#C5A028] uppercase tracking-widest mt-0.5">$300 refundable deposit</p>
-              <button
-                onClick={() => onSelectShare('Half')}
-                className="mt-4 w-full py-3 bg-[#C5A028] text-black uppercase text-[10px] tracking-widest font-bold hover:bg-[#d6af30] transition-colors"
-              >
-                Select Half Share
-              </button>
-            </div>
-          </div>
-
-          {/* Quarter Share */}
-          <div className="p-8 flex flex-col justify-between hover:bg-[#151515] transition-colors bg-[#0a0a0a]">
-            <div>
-              <span className="text-[10px] uppercase tracking-widest text-[#C5A028] block">03 — Quarter Share</span>
-              <h3 className="font-serif text-2xl mt-2 font-bold text-amber-100">The Curated Box</h3>
-              <p className="text-xs mt-3 text-zinc-400 leading-relaxed">
-                Perfect for culinary enthusiasts. 100-125 lbs of balanced steaks, slow-cook roasts, and ground chuck.
-              </p>
-              <div className="mt-4 pt-4 border-t border-[#C5A028]/10 text-xs space-y-1.5 text-zinc-400">
-                <p>• Fits in standard chest freezer (4-5 cu. ft.)</p>
-                <p>• Vacuum sealed in 1-2 lb portions</p>
-                <p>• Includes ribeyes, NY strips & tenderloin</p>
-              </div>
-            </div>
-            <div className="mt-8 pt-4 border-t border-[#C5A028]/20">
-              <p className="font-serif text-2xl font-bold text-white">$850 – $1,050</p>
-              <p className="text-[10px] text-[#C5A028] uppercase tracking-widest mt-0.5">$150 refundable deposit</p>
-              <button
-                onClick={() => onSelectShare('Quarter')}
-                className="mt-4 w-full py-3 border border-[#C5A028] text-[#C5A028] uppercase text-[10px] tracking-widest font-bold hover:bg-[#C5A028] hover:text-black transition-colors"
-              >
-                Select Quarter Share
-              </button>
-            </div>
-          </div>
-
-          {/* Eighth Share */}
-          <div className="p-8 flex flex-col justify-between hover:bg-[#151515] transition-colors bg-[#0a0a0a]">
-            <div>
-              <span className="text-[10px] uppercase tracking-widest text-[#C5A028] block">04 — Eighth Share</span>
-              <h3 className="font-serif text-2xl mt-2 font-bold text-amber-100">The Tasting Entry</h3>
-              <p className="text-xs mt-3 text-zinc-400 leading-relaxed">
-                Explore the Bastanzi difference. 50-60 lbs of essential dry-aged cuts fitting standard kitchen freezers.
-              </p>
-              <div className="mt-4 pt-4 border-t border-[#C5A028]/10 text-xs space-y-1.5 text-zinc-400">
-                <p>• Requires ~2.5 cu. ft. freezer space</p>
-                <p>• Great intro to dry-aged beef</p>
-                <p>• Flash frozen for peak freshness</p>
-              </div>
-            </div>
-            <div className="mt-8 pt-4 border-t border-[#C5A028]/20">
-              <p className="font-serif text-2xl font-bold text-white">$450 – $550</p>
-              <p className="text-[10px] text-[#C5A028] uppercase tracking-widest mt-0.5">$100 refundable deposit</p>
-              <button
-                onClick={() => onSelectShare('Eighth')}
-                className="mt-4 w-full py-3 border border-[#C5A028] text-[#C5A028] uppercase text-[10px] tracking-widest font-bold hover:bg-[#C5A028] hover:text-black transition-colors"
-              >
-                Select Eighth Share
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Brand Heritage Section */}
-      <section className="py-20 bg-[#111111] border-b border-[#C5A028]/20">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+      {/* Brand Heritage Preview */}
+      <section className="py-20 bg-[#0c1a12] border-b border-emerald-900/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {/* Image Stack */}
             <div className="lg:col-span-6 relative">
-              <div className="relative rounded-2xl overflow-hidden border border-[#C5A028]/30 shadow-2xl aspect-4/3 group bg-[#0a0a0a]">
+              <div className="relative rounded-2xl overflow-hidden border border-emerald-800/60 shadow-2xl aspect-4/3 group bg-[#12241a]">
                 <img
                   src={BRAND_IMAGES.primeRibeye}
                   alt="Bastanzi Dry Aged Prime Ribeye"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                   referrerPolicy="no-referrer"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent opacity-80" />
-                <div className="absolute bottom-4 left-4 right-4 p-4 bg-[#0a0a0a]/90 backdrop-blur-md border border-[#C5A028]/30 rounded-xl">
-                  <span className="text-[10px] uppercase font-mono text-[#C5A028] tracking-widest block">MASTER BUTCHER SELECTION</span>
-                  <p className="font-serif text-sm text-amber-100 font-bold">21-Day Cedar Dry Aged Prime Ribeye</p>
+                <div className="absolute inset-0 bg-gradient-to-t from-emerald-950 via-transparent to-transparent opacity-80" />
+                <div className="absolute bottom-4 left-4 right-4 p-4 bg-emerald-950/90 backdrop-blur-md border border-amber-500/30 rounded-xl">
+                  <span className="text-[10px] uppercase font-mono text-amber-400 tracking-widest block">MASTER BUTCHER SELECTION</span>
+                  <p className="font-serif text-sm text-amber-100 font-bold">21-Day Dry Aged Prime Ribeye</p>
                 </div>
               </div>
 
               {/* Floating Badge */}
-              <div className="absolute -bottom-6 -right-6 bg-[#0a0a0a] border border-[#C5A028]/40 p-4 rounded-xl shadow-2xl hidden sm:block">
+              <div className="absolute -bottom-6 -right-6 bg-[#102218] border border-amber-500/40 p-4 rounded-xl shadow-2xl hidden sm:block">
                 <div className="flex items-center gap-3">
                   <img
                     src={BRAND_IMAGES.logo}
@@ -255,8 +152,8 @@ export default function HomePage({ setActiveTab, onSelectShare }: HomePageProps)
                     referrerPolicy="no-referrer"
                   />
                   <div>
-                    <span className="text-xs font-serif font-bold text-[#C5A028] block">BOZEMAN, MONTANA</span>
-                    <span className="text-[10px] text-zinc-400 uppercase tracking-widest">Gallatin Valley Pastures</span>
+                    <span className="text-xs font-serif font-bold text-amber-200 block">PHOENIX, ARIZONA</span>
+                    <span className="text-[10px] text-stone-300">1154 E Fillmore St</span>
                   </div>
                 </div>
               </div>
@@ -264,38 +161,38 @@ export default function HomePage({ setActiveTab, onSelectShare }: HomePageProps)
 
             {/* Story Content */}
             <div className="lg:col-span-6 space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#C5A028]/10 border border-[#C5A028]/30 text-[10px] font-mono text-[#C5A028] uppercase tracking-widest">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-900/60 border border-amber-500/30 rounded-full text-xs font-mono text-amber-300">
                 <span>OUR RANCH PHILOSOPHY</span>
               </div>
 
-              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white leading-tight">
+              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-amber-100 leading-tight">
                 Raised slowly on wide open pasture. Prepared with master craftsmanship.
               </h2>
 
-              <p className="text-zinc-300 text-sm sm:text-base leading-relaxed">
-                At Bastanzi Premium Beef Co., we believe extraordinary steak is born from pristine stewardship. Our Black Angus cattle graze freely on organic mountain pasture grasses watered by clear Gallatin snowmelt streams.
+              <p className="text-stone-300 text-sm sm:text-base leading-relaxed font-light">
+                At Bastanzi Premium Beef Co., we believe extraordinary beef is born from unyielding stewardship. Our cattle graze freely on organic pastures with natural spring water, producing beef with dense marbling and tender steakhouse flavor.
               </p>
 
               <div className="space-y-3 pt-2">
                 <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-[#C5A028] shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="font-serif text-sm font-bold text-amber-100">21-Day Cedar Chamber Dry-Aging</h4>
-                    <p className="text-xs text-zinc-400">Concentrates natural beef flavor while breaking down fibers for melt-in-your-mouth steakhouse tenderness.</p>
+                    <h4 className="font-serif text-sm font-bold text-amber-200">21-Day Cedar Chamber Dry-Aging</h4>
+                    <p className="text-xs text-stone-300 font-light">Concentrates natural beef flavor while breaking down fibers for melt-in-your-mouth steakhouse tenderness.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-[#C5A028] shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="font-serif text-sm font-bold text-amber-100">Zero Added Hormones or mRNA Vaccines</h4>
-                    <p className="text-xs text-zinc-400">100% natural development without growth promoters, antibiotics, or unnatural synthetic additives.</p>
+                    <h4 className="font-serif text-sm font-bold text-amber-200">Zero Added Hormones or Antibiotics</h4>
+                    <p className="text-xs text-stone-300 font-light">100% natural development without growth promoters, antibiotics, or unnatural synthetic additives.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-[#C5A028] shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="font-serif text-sm font-bold text-amber-100">Custom Butcher Instructions for Full & Half Shares</h4>
-                    <p className="text-xs text-zinc-400">Specify steak thickness, roast sizes, bone-in preferences, and lean burger ratios with our master butcher.</p>
+                    <h4 className="font-serif text-sm font-bold text-amber-200">Custom Butcher Consultation for Full & Half Shares</h4>
+                    <p className="text-xs text-stone-300 font-light">Specify steak thickness, roast sizes, bone-in preferences, and lean burger ratios with our master butcher.</p>
                   </div>
                 </div>
               </div>
@@ -303,10 +200,10 @@ export default function HomePage({ setActiveTab, onSelectShare }: HomePageProps)
               <div className="pt-4">
                 <button
                   onClick={() => setActiveTab('about')}
-                  className="px-6 py-3 border border-[#C5A028] text-[#C5A028] uppercase text-[10px] sm:text-xs tracking-widest font-bold hover:bg-[#C5A028] hover:text-black transition-colors inline-flex items-center gap-2"
+                  className="px-6 py-3 bg-[#12241a] border border-amber-500/30 hover:border-amber-400 rounded-lg text-xs font-serif font-bold text-amber-200 uppercase tracking-widest transition-colors inline-flex items-center gap-2"
                 >
                   <span>Learn About Our Ranch Heritage</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4 text-amber-400" />
                 </button>
               </div>
             </div>
@@ -314,21 +211,127 @@ export default function HomePage({ setActiveTab, onSelectShare }: HomePageProps)
         </div>
       </section>
 
-      {/* Interactive Freezer Space Calculator */}
-      <section className="py-20 bg-[#0a0a0a] border-b border-[#C5A028]/20">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
-          <FreezerCalculator onSelectShare={onSelectShare} />
+      {/* NEW SECTION 3: Premium Beef Cuts */}
+      <PremiumCutsSection />
+
+      {/* NEW SECTION 4: Freezer-Ready Packaging */}
+      <FreezerPackagingSection />
+
+      {/* Beef Shares Pricing Grid */}
+      <section className="py-20 bg-[#08130c] relative border-b border-emerald-900/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+            <span className="text-xs font-mono text-amber-400 uppercase tracking-widest bg-emerald-900/60 px-3 py-1 rounded-full border border-amber-500/30">
+              RESERVE YOUR BEEF SHARE
+            </span>
+            <h2 className="font-serif text-3xl sm:text-5xl font-bold text-amber-100">
+              Select Your Beef Share Size
+            </h2>
+            <p className="text-stone-300 text-sm sm:text-base font-light">
+              Secure your animal deposit today. Flash-frozen, vacuum-sealed, and shipped insulated directly from our ranch to your door.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {BEEF_SHARE_TIERS.map((tier) => (
+              <div
+                key={tier.id}
+                className={`bg-[#102218] rounded-2xl p-6 border transition-all flex flex-col justify-between relative group ${
+                  tier.featured
+                    ? 'border-amber-400 shadow-2xl shadow-amber-500/10 ring-1 ring-amber-400/50 bg-[#14281d]'
+                    : 'border-emerald-800/50 hover:border-amber-500/40 hover:bg-[#14281d]'
+                }`}
+              >
+                {tier.featured && (
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-amber-400 text-emerald-950 font-serif font-bold text-[10px] uppercase tracking-widest px-3 py-1 rounded-full shadow-md">
+                    MOST POPULAR VALUE
+                  </div>
+                )}
+
+                <div>
+                  {tier.image && (
+                    <div className="w-full h-40 overflow-hidden rounded-xl mb-4 border border-emerald-800/60 shadow-inner">
+                      <img
+                        src={tier.image}
+                        alt={`${tier.title} package`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                  )}
+                  <div className="text-center border-b border-emerald-900/60 pb-5 mb-5">
+                    <h3 className="font-serif text-xl font-bold text-amber-200">{tier.title}</h3>
+                    <p className="text-stone-300 text-xs mt-1 min-h-[32px] font-light">{tier.subtitle}</p>
+                    <div className="mt-4">
+                      <span className="font-serif text-2xl font-bold text-amber-400 block">{tier.priceRange}</span>
+                      <span className="text-[11px] text-stone-400 font-mono block mt-0.5">
+                        ${tier.depositAmount} refundable deposit required
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 text-xs mb-6 font-light">
+                    <div className="flex justify-between border-b border-emerald-900/60 pb-1.5">
+                      <span className="text-stone-300">Packaged Beef Weight:</span>
+                      <span className="text-white font-mono font-medium">{tier.weightLbs}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-emerald-900/60 pb-1.5">
+                      <span className="text-stone-300">Approx. Meals:</span>
+                      <span className="text-amber-300 font-mono font-medium">~{tier.approxMeals} meals</span>
+                    </div>
+                    <div className="flex justify-between border-b border-emerald-900/60 pb-1.5">
+                      <span className="text-stone-300">Freezer Required:</span>
+                      <span className="text-stone-200 font-mono">{tier.cubicFeet} cu. ft.</span>
+                    </div>
+
+                    <div className="pt-2">
+                      <span className="text-[11px] uppercase tracking-wider text-amber-400 font-mono block mb-2">
+                        Includes Signature Cuts:
+                      </span>
+                      <ul className="space-y-1.5 text-stone-300">
+                        {tier.cutSummary.steaks.slice(0, 2).map((cut, idx) => (
+                          <li key={idx} className="flex items-center gap-1.5">
+                            <Check className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                            <span className="truncate">{cut}</span>
+                          </li>
+                        ))}
+                        {tier.cutSummary.groundAndSpecialty.slice(0, 1).map((cut, idx) => (
+                          <li key={idx} className="flex items-center gap-1.5">
+                            <Check className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                            <span className="truncate">{cut}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-emerald-900/60">
+                  <button
+                    onClick={() => onSelectShare(tier.id)}
+                    className={`w-full py-3 rounded-xl font-serif font-bold text-xs uppercase tracking-widest transition-all ${
+                      tier.featured
+                        ? 'bg-amber-500 hover:bg-amber-400 text-emerald-950 shadow-lg shadow-amber-500/20'
+                        : 'bg-[#0c1a12] hover:bg-amber-500 hover:text-emerald-950 text-amber-200 border border-emerald-800/60'
+                    }`}
+                  >
+                    Reserve {tier.id} Share
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Customer Reviews & Testimonials */}
-      <section className="py-20 bg-[#111111] border-b border-[#C5A028]/20">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+      <section className="py-20 bg-[#0c1a12] border-b border-emerald-900/60">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-14 space-y-3">
-            <span className="text-[10px] font-mono text-[#C5A028] uppercase tracking-[0.3em] bg-[#C5A028]/10 px-3 py-1 rounded-full border border-[#C5A028]/30">
+            <span className="text-xs font-mono text-amber-400 uppercase tracking-widest bg-emerald-900/60 px-3 py-1 rounded-full border border-amber-500/30">
               VERIFIED RANCH SHAREHOLDERS
             </span>
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white">
+            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-amber-100">
               Trusted by Beef Enthusiasts & Chefs
             </h2>
           </div>
@@ -337,27 +340,27 @@ export default function HomePage({ setActiveTab, onSelectShare }: HomePageProps)
             {REVIEWS.map((rev) => (
               <div
                 key={rev.id}
-                className="bg-[#0a0a0a] p-6 border border-[#C5A028]/20 hover:border-[#C5A028]/50 transition-all space-y-4 flex flex-col justify-between"
+                className="bg-[#102218] p-6 rounded-2xl border border-emerald-800/40 hover:border-amber-500/30 transition-all space-y-4 flex flex-col justify-between"
               >
                 <div className="space-y-3">
-                  <div className="flex items-center gap-1 text-[#C5A028]">
+                  <div className="flex items-center gap-1 text-amber-400">
                     {[...Array(rev.rating)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-[#C5A028]" />
+                      <Star key={i} className="w-4 h-4 fill-amber-400" />
                     ))}
                   </div>
-                  <p className="text-zinc-300 text-sm leading-relaxed italic font-serif">
+                  <p className="text-stone-300 text-sm leading-relaxed italic font-serif font-light">
                     "{rev.comment}"
                   </p>
                 </div>
 
-                <div className="pt-4 border-t border-[#C5A028]/10 flex items-center justify-between text-xs">
+                <div className="pt-4 border-t border-emerald-900/60 flex items-center justify-between text-xs">
                   <div>
-                    <span className="font-bold text-amber-100 block">{rev.author}</span>
-                    <span className="text-zinc-500">{rev.location}</span>
+                    <span className="font-bold text-amber-200 block">{rev.author}</span>
+                    <span className="text-stone-400">{rev.location}</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] text-[#C5A028] font-mono block uppercase tracking-wider">{rev.shareType}</span>
-                    <span className="text-[10px] text-zinc-600">{rev.date}</span>
+                    <span className="text-[11px] text-amber-400 font-mono block">{rev.shareType}</span>
+                    <span className="text-[10px] text-stone-400">{rev.date}</span>
                   </div>
                 </div>
               </div>
@@ -366,34 +369,39 @@ export default function HomePage({ setActiveTab, onSelectShare }: HomePageProps)
         </div>
       </section>
 
-      {/* Reservation Bottom Callout */}
-      <section className="bg-[#0a0a0a] border-b border-[#C5A028]/20 p-8 sm:p-12 flex flex-col lg:flex-row gap-8 items-center justify-between">
-        <div className="lg:w-1/2 space-y-3">
-          <span className="text-[10px] uppercase tracking-widest text-[#C5A028] font-mono block">HERD ALLOCATION RESERVATION</span>
-          <h3 className="font-serif text-2xl sm:text-3xl font-bold text-white">Secure Your Fall 2026 Reservation</h3>
-          <p className="text-xs text-zinc-400 leading-relaxed max-w-xl">
-            Complete our digital reservation form to hold your seasonal harvest allocation. Our ranch concierge will follow up within 24 hours to finalize butcher specs and delivery dates.
-          </p>
-          <div className="flex gap-4 items-center text-zinc-400 text-[11px] uppercase tracking-widest pt-2">
-            <span className="text-[#C5A028] font-serif">{BUSINESS_INFO.email}</span>
-            <div className="h-px w-8 bg-[#C5A028]" />
-            <span>{BUSINESS_INFO.address}, {BUSINESS_INFO.cityStateZip}</span>
-          </div>
-        </div>
+      {/* Reservation CTA Section */}
+      <section className="py-20 bg-gradient-to-br from-[#07110a] via-[#0e2216] to-[#07110a] text-center relative overflow-hidden">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-6">
+          <img
+            src={BRAND_IMAGES.logo}
+            alt="Bastanzi Crest"
+            className="w-16 h-16 rounded-full mx-auto p-0.5 bg-amber-400 shadow-xl"
+            referrerPolicy="no-referrer"
+          />
 
-        <div className="lg:w-1/2 w-full flex flex-col sm:flex-row gap-4 justify-end">
-          <button
-            onClick={() => setActiveTab('reservation')}
-            className="px-8 py-4 bg-[#C5A028] text-black font-bold uppercase text-[10px] sm:text-xs tracking-widest hover:bg-[#d6af30] transition-colors"
-          >
-            Request Allocation
-          </button>
-          <a
-            href={`tel:${BUSINESS_INFO.phone}`}
-            className="px-8 py-4 border border-[#C5A028] text-[#C5A028] uppercase text-[10px] sm:text-xs tracking-widest font-bold hover:bg-[#C5A028] hover:text-black transition-colors text-center"
-          >
-            Call {BUSINESS_INFO.phoneFormatted}
-          </a>
+          <h2 className="font-serif text-3xl sm:text-5xl font-bold text-amber-100">
+            Taste the Difference of True Ranch-Raised Beef
+          </h2>
+
+          <p className="text-stone-300 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed font-light">
+            Fall herd allocations fill quickly. Secure your reservation now to guarantee your delivery window and enjoy farm-direct beef all year long.
+          </p>
+
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button
+              onClick={() => setActiveTab('reservation')}
+              className="px-8 py-4 bg-amber-500 hover:bg-amber-400 text-emerald-950 font-serif font-bold text-sm uppercase tracking-widest rounded-full shadow-2xl shadow-amber-500/20 hover:scale-105 transition-all flex items-center justify-center gap-2"
+            >
+              <span>Begin Your Reservation</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <a
+              href={`tel:${BUSINESS_INFO.phone}`}
+              className="px-8 py-4 bg-[#12241a] text-amber-200 border border-amber-500/30 font-serif font-semibold text-sm uppercase tracking-widest rounded-full hover:bg-[#182e21] transition-colors"
+            >
+              Call Ranch Concierge: {BUSINESS_INFO.phoneFormatted}
+            </a>
+          </div>
         </div>
       </section>
     </div>
