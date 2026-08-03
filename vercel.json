@@ -8,15 +8,15 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api/$1"
+      "destination": "/api/index"
     },
     {
       "source": "/sitemap.xml",
-      "destination": "/api/sitemap"
+      "destination": "/api/index"
     },
     {
       "source": "/robots.txt",
-      "destination": "/api/robots"
+      "destination": "/api/index"
     },
     {
       "source": "/(.*)",
