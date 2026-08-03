@@ -4,6 +4,8 @@ import Footer from './components/Footer';
 import OpenGraphModal from './components/OpenGraphModal';
 import SitemapModal from './components/SitemapModal';
 import VercelConfigModal from './components/VercelConfigModal';
+import AiAssistant from './components/AiAssistant';
+import NewsletterSection from './components/NewsletterSection';
 
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
@@ -12,6 +14,8 @@ import GalleryPage from './pages/GalleryPage';
 import FaqPage from './pages/FaqPage';
 import ContactPage from './pages/ContactPage';
 import ReservationPage from './pages/ReservationPage';
+import TrackingPage from './pages/TrackingPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
 
 import { ShareSize } from './types';
 
@@ -27,9 +31,9 @@ export default function App() {
   // Sync hash with active tab for clean client navigation
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '');
-      if (['home', 'about', 'shares', 'gallery', 'faq', 'contact', 'reservation'].includes(hash)) {
-        setActiveTab(hash);
+      const rawHash = window.location.hash.replace('#', '').split('?')[0];
+      if (['home', 'about', 'shares', 'gallery', 'faq', 'contact', 'reservation', 'track', 'admin'].includes(rawHash)) {
+        setActiveTab(rawHash);
       }
     };
 
@@ -49,7 +53,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-amber-500 selection:text-black flex flex-col justify-between">
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-amber-500 selection:text-black flex flex-col justify-between relative">
       {/* Header Navigation */}
       <Header
         activeTab={activeTab}
@@ -67,12 +71,17 @@ export default function App() {
         {activeTab === 'about' && <AboutPage setActiveTab={changeTab} />}
         {activeTab === 'shares' && <BeefSharesPage onSelectShare={handleSelectShare} />}
         {activeTab === 'gallery' && <GalleryPage />}
+        {activeTab === 'track' && <TrackingPage />}
         {activeTab === 'faq' && <FaqPage setActiveTab={changeTab} />}
         {activeTab === 'contact' && <ContactPage />}
         {activeTab === 'reservation' && (
           <ReservationPage initialShareSize={selectedShare} />
         )}
+        {activeTab === 'admin' && <AdminDashboardPage />}
       </main>
+
+      {/* Newsletter Subscription Footer Band */}
+      {activeTab !== 'admin' && <NewsletterSection />}
 
       {/* Footer */}
       <Footer
@@ -81,6 +90,9 @@ export default function App() {
         onOpenSitemapModal={() => setSitemapModalOpen(true)}
         onOpenVercelModal={() => setVercelModalOpen(true)}
       />
+
+      {/* Gemini AI Assistant Floating Widget */}
+      <AiAssistant />
 
       {/* Interactive Modals */}
       <OpenGraphModal isOpen={ogModalOpen} onClose={() => setOgModalOpen(false)} />

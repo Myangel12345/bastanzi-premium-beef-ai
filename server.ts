@@ -8,6 +8,13 @@ import contactHandler from './api/contact.js';
 import healthHandler from './api/health.js';
 import sitemapHandler from './api/sitemap.js';
 import robotsHandler from './api/robots.js';
+import adminLoginHandler from './api/admin/login.js';
+import adminVerifyHandler from './api/admin/verify.js';
+import adminLogoutHandler from './api/admin/logout.js';
+import adminShipmentsHandler from './api/admin/shipments.js';
+import trackHandler from './api/track.js';
+import newsletterHandler from './api/newsletter.js';
+import assistantHandler from './api/assistant.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,6 +28,13 @@ app.use(express.json());
 app.all('/api/health', (req, res) => healthHandler(req as any, res as any));
 app.all('/api/reserve', (req, res) => reserveHandler(req as any, res as any));
 app.all('/api/contact', (req, res) => contactHandler(req as any, res as any));
+app.all('/api/admin/login', (req, res) => adminLoginHandler(req as any, res as any));
+app.all('/api/admin/verify', (req, res) => adminVerifyHandler(req as any, res as any));
+app.all('/api/admin/logout', (req, res) => adminLogoutHandler(req as any, res as any));
+app.all('/api/admin/shipments', (req, res) => adminShipmentsHandler(req as any, res as any));
+app.all('/api/track', (req, res) => trackHandler(req as any, res as any));
+app.all('/api/newsletter', (req, res) => newsletterHandler(req as any, res as any));
+app.all('/api/assistant', (req, res) => assistantHandler(req as any, res as any));
 app.all('/sitemap.xml', (req, res) => sitemapHandler(req as any, res as any));
 app.all('/robots.txt', (req, res) => robotsHandler(req as any, res as any));
 

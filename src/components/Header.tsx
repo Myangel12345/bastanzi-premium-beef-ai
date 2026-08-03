@@ -24,8 +24,10 @@ export default function Header({
     { id: 'about', label: 'About Our Ranch' },
     { id: 'shares', label: 'Beef Shares' },
     { id: 'gallery', label: 'Gallery' },
+    { id: 'track', label: 'Track Shipment' },
     { id: 'faq', label: 'FAQ' },
     { id: 'contact', label: 'Contact' },
+    { id: 'admin', label: 'Admin Portal' },
   ];
 
   const handleNavClick = (id: string) => {

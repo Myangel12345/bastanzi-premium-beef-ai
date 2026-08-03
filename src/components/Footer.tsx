@@ -89,8 +89,18 @@ export default function Footer({
                 </button>
               </li>
               <li>
+                <button onClick={() => handleNav('track')} className="hover:text-amber-300 font-mono text-amber-300 transition-colors">
+                  Track Shipment
+                </button>
+              </li>
+              <li>
                 <button onClick={() => handleNav('faq')} className="hover:text-amber-300 transition-colors">
                   FAQ & Storage Guide
+                </button>
+              </li>
+              <li>
+                <button onClick={() => handleNav('admin')} className="hover:text-amber-300 transition-colors">
+                  Admin Portal
                 </button>
               </li>
               <li>
