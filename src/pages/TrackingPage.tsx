@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ShieldCheck, Truck, Package, Clock, CheckCircle2, AlertCircle, Printer, MapPin, Calendar, FileText } from 'lucide-react';
+import { Search, Truck, Clock, CheckCircle2, AlertCircle, Printer, MapPin, Calendar, ShieldCheck, Box } from 'lucide-react';
 
 export default function TrackingPage() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState('');
+  const [searched, setSearched] = useState(false);
 
-  // Auto look up default example if query in URL hash
+  // Auto look up default example ONLY if query in URL hash explicitly
   useEffect(() => {
     const hashParams = window.location.hash.split('?');
     if (hashParams.length > 1) {
@@ -25,6 +26,7 @@ export default function TrackingPage() {
     setLoading(true);
     setError('');
     setResult(null);
+    setSearched(true);
 
     try {
       const res = await fetch(`/api/track?id=${encodeURIComponent(idToSearch.trim())}`);
@@ -32,7 +34,7 @@ export default function TrackingPage() {
       if (res.ok && data.found) {
         setResult(data.shipment);
       } else {
-        setError(data.error || 'No shipment found matching this tracking ID.');
+        setError(data.error || 'No shipment found matching this tracking or reservation ID.');
       }
     } catch {
       setError('Unable to fetch tracking record at this time.');
@@ -60,27 +62,27 @@ export default function TrackingPage() {
             <span>OGFCARGO Cold Chain Express Tracking</span>
           </div>
           <h1 className="font-serif text-3xl sm:text-5xl font-bold text-amber-100 tracking-tight mb-3">
-            Track Your Premium Beef Share Shipment
+            Track Your Beef Share & Cold Chain Order
           </h1>
           <p className="text-stone-300 text-sm font-light">
-            Enter your reservation confirmation code (e.g., <code className="text-amber-300 font-mono">RES-882194A</code>) or waybill tracking number (<code className="text-amber-300 font-mono font-bold">OGF-882194A</code>) to track real-time temperature logs and transit milestones.
+            Enter your reservation order ID (e.g., <code className="text-amber-300 font-mono">RES-882194A</code>) or waybill tracking number (<code className="text-amber-300 font-mono font-bold">OGF-882194A</code>) to view your order status.
           </p>
         </div>
 
         {/* Search Input Box */}
-        <form onSubmit={handleSearch} className="max-w-xl mx-auto mb-12">
+        <form onSubmit={handleSearch} className="max-w-xl mx-auto mb-10">
           <div className="relative flex items-center">
             <Search className="w-5 h-5 text-amber-400 absolute left-4" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Enter Tracking ID (e.g., RES-882194A or OGF-993021B)..."
+              placeholder="Enter Order Number or Tracking Number..."
               className="w-full pl-12 pr-32 py-4 bg-[#0d1711] border-2 border-emerald-800/80 focus:border-amber-400 rounded-2xl text-sm text-white placeholder-stone-500 focus:outline-none shadow-2xl transition-all font-mono"
             />
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !query.trim()}
               className="absolute right-2 px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-400 text-black font-serif font-bold text-xs uppercase tracking-widest rounded-xl hover:brightness-110 transition-all shadow-md disabled:opacity-50"
             >
               {loading ? 'Searching...' : 'Track'}
@@ -88,24 +90,22 @@ export default function TrackingPage() {
           </div>
         </form>
 
-        {/* Sample Quick Buttons */}
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-12 text-xs font-mono">
-          <span className="text-stone-500">Quick Test IDs:</span>
-          {['RES-882194A', 'RES-993021B', 'RES-441203C'].map((sample) => (
-            <button
-              key={sample}
-              onClick={() => {
-                setQuery(sample);
-                fetchTracking(sample);
-              }}
-              className="px-3 py-1 bg-[#12241a] hover:bg-[#1a3526] text-amber-300 border border-emerald-800/60 rounded-lg transition-colors"
-            >
-              {sample}
-            </button>
-          ))}
-        </div>
+        {/* Initial Prompt State (when no search performed yet) */}
+        {!searched && !loading && (
+          <div className="bg-[#0b140f] border border-emerald-900/80 rounded-3xl p-12 text-center max-w-xl mx-auto shadow-2xl space-y-4">
+            <div className="inline-flex p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-400">
+              <Box className="w-8 h-8" />
+            </div>
+            <h3 className="font-serif text-xl font-bold text-amber-100">
+              Enter your tracking number to view your order status.
+            </h3>
+            <p className="text-stone-400 text-xs font-mono max-w-md mx-auto">
+              Track real-time progress across all 9 stages: Order Received, Payment Confirmed, Processing, Processor Aging, Packaging, Ready for Pickup, Shipped, Out for Delivery, and Delivered.
+            </p>
+          </div>
+        )}
 
-        {/* Error message */}
+        {/* Error Message */}
         {error && (
           <div className="max-w-xl mx-auto p-4 bg-red-950/60 border border-red-500/50 rounded-2xl text-red-200 text-sm text-center flex items-center justify-center gap-2 mb-10">
             <AlertCircle className="w-5 h-5 text-red-400" />
@@ -121,7 +121,7 @@ export default function TrackingPage() {
               <div>
                 <div className="flex items-center gap-2 text-xs font-mono text-amber-400 mb-1">
                   <span>WAYBILL / TRACKING #</span>
-                  <span className="font-bold text-amber-300 text-sm px-2 py-0.5 bg-amber-500/10 border border-amber-500/30 rounded">
+                  <span className="font-bold text-amber-300 text-sm px-2.5 py-0.5 bg-amber-500/10 border border-amber-500/30 rounded">
                     {result.trackingNumber || result.id}
                   </span>
                 </div>
@@ -133,8 +133,8 @@ export default function TrackingPage() {
 
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <span className="text-[10px] uppercase tracking-widest text-stone-400 font-mono block">Status</span>
-                  <span className="inline-block px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                  <span className="text-[10px] uppercase tracking-widest text-stone-400 font-mono block">Current Stage</span>
+                  <span className="inline-block px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
                     {result.status}
                   </span>
                 </div>
@@ -144,7 +144,7 @@ export default function TrackingPage() {
                   title="Print Waybill / Shipping Invoice"
                 >
                   <Printer className="w-4 h-4" />
-                  <span className="hidden sm:inline">Print Waybill</span>
+                  <span className="hidden sm:inline">Print Invoice</span>
                 </button>
               </div>
             </div>
@@ -177,13 +177,18 @@ export default function TrackingPage() {
               </div>
             </div>
 
-            {/* Tracking Timeline */}
+            {/* Complete 9-Stage Tracking Timeline */}
             <div>
-              <h3 className="font-serif text-lg font-bold text-amber-200 mb-6 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-amber-400" /> Cold Chain Transit Timeline
-              </h3>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-serif text-lg font-bold text-amber-200 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-amber-400" /> Order Progress & Cold Chain Timeline (9 Stages)
+                </h3>
+                <span className="text-xs font-mono text-emerald-400 flex items-center gap-1">
+                  <ShieldCheck className="w-4 h-4" /> USDA Inspected & Logged
+                </span>
+              </div>
 
-              <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:left-2.5 sm:before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-emerald-800/80">
+              <div className="relative pl-6 sm:pl-8 space-y-4 before:absolute before:left-2.5 sm:before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-emerald-800/80">
                 {result.timeline?.map((step: any, idx: number) => {
                   const isDone = step.status === 'completed';
                   const isCurrent = step.status === 'current';
@@ -201,10 +206,20 @@ export default function TrackingPage() {
                         {isDone ? <CheckCircle2 className="w-3.5 h-3.5" /> : idx + 1}
                       </div>
 
-                      <div className="bg-[#12241a]/80 p-4 rounded-2xl border border-emerald-800/60 flex-1">
+                      <div
+                        className={`p-3.5 rounded-2xl border flex-1 transition-all ${
+                          isCurrent
+                            ? 'bg-[#183223] border-amber-400/80 shadow-lg'
+                            : isDone
+                            ? 'bg-[#12241a]/90 border-emerald-800/60'
+                            : 'bg-[#080f0a] border-stone-800 opacity-60'
+                        }`}
+                      >
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
-                          <h4 className="font-serif font-bold text-sm text-white">{step.title}</h4>
-                          <span className="text-[10px] font-mono text-amber-400">{step.date}</span>
+                          <h4 className={`font-serif font-bold text-sm ${isCurrent ? 'text-amber-200' : isDone ? 'text-white' : 'text-stone-400'}`}>
+                            {step.title}
+                          </h4>
+                          <span className="text-[10px] font-mono text-amber-400/90">{step.date}</span>
                         </div>
                         <p className="text-xs text-stone-300 font-light">{step.description}</p>
                       </div>

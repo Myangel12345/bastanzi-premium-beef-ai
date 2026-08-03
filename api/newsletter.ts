@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { Resend } from 'resend';
+import { addSubscriber } from './lib/db';
+import { sendEmail, getBrandedEmailWrapper } from './lib/email';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -22,28 +23,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Please provide a valid email address' });
     }
 
-    const resendApiKey = process.env.RESEND_API_KEY || '';
-    if (resendApiKey) {
-      try {
-        const resend = new Resend(resendApiKey);
-        await resend.emails.send({
-          from: 'Bastanzi Newsletter <vip@bastanzibeef.com>',
-          to: [email],
-          subject: 'Welcome to Bastanzi Beef Co. Private Reserve List',
-          html: `<div style="font-family: Georgia, serif; padding: 20px; background: #000; color: #fff;">
-            <h1 style="color: #fbbf24;">Bastanzi Premium Beef Co.</h1>
-            <p>Thank you for subscribing to our ranch updates, seasonal harvest notifications, and reserve share releases.</p>
-          </div>`,
-        });
-      } catch (e) {
-        console.warn('Resend newsletter email exception:', e);
-      }
-    }
+    const sub = await addSubscriber(email.trim());
+
+    // Send confirmation email
+    const html = getBrandedEmailWrapper(
+      'Welcome to Private Reserve',
+      `
+        <h2 style="color: #fbbf24; margin-top: 0;">Welcome to Bastanzi Private Reserve List</h2>
+        <p>Thank you for subscribing! You will receive priority notifications when seasonal pasture-raised beef shares, quarter/half harvests, and rare dry-aged cut reserves are released.</p>
+        <p style="color: #34d399; font-weight: bold;">Ranch Location: Sheridan, Montana</p>
+      `
+    );
+
+    await sendEmail({
+      to: email.trim(),
+      subject: '✨ Bastanzi Beef Private Reserve Access Confirmed',
+      html,
+    });
 
     return res.status(200).json({
       success: true,
       message: 'Subscribed to Bastanzi Ranch private reserve updates.',
-      email,
+      subscriber: sub,
     });
   } catch (err: any) {
     return res.status(500).json({ error: 'Internal server error processing newsletter request' });

@@ -25,56 +25,112 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
-      // Intelligent fallback answer if Gemini key is not configured in environment
       return res.status(200).json({
-        reply: getFallbackAnswer(prompt),
+        reply: getDynamicFallbackAnswer(prompt, history),
         simulated: true,
       });
     }
 
     const ai = new GoogleGenAI({ apiKey });
 
-    const systemInstruction = `You are the AI Ranch Concierge and Logistics Assistant for Bastanzi Premium Beef Co. & OGFCARGO Logistics Ventures.
-Your goal is to answer customer and admin questions politely, authoritatively, and concisely.
-Key knowledge:
-- Bastanzi Beef offers Eighth (50 lbs), Quarter (100 lbs), Half (200 lbs), and Full (400 lbs) beef shares.
-- Finishing choices: 100% Grass-Fed & Finished or Pasture-Raised Grain-Finished.
-- All cuts are vacuum sealed in 4mil heavy-duty packages and shipped via OGFCARGO Cold Chain Logistics in dry-ice insulated eco-coolers.
-- Waybills and tracking numbers start with OGF- or RES-.
-- Delivery takes 2-5 business days depending on region.
-- Keep answers helpful, warm, and professional under 150 words.`;
+    const systemInstruction = `You are the Master Cattle & Beef Concierge for Bastanzi Premium Beef Co., located in Sheridan, Montana. Your role is to provide expert, warm, natural, and helpful advice to customers regarding our pasture-raised, grass & grain finished beef shares.
+
+Knowledge Base:
+1. Beef Shares & Pricing:
+   - Quarter Share: ~100-115 lbs packaged beef ($1,150). Ideal for small families (1-3 people). Requires ~4.0 cu ft freezer.
+   - Half Share: ~200-230 lbs packaged beef ($2,200). Most popular. Custom butcher cut sheet options. Requires ~8.0 cu ft freezer.
+   - Whole Share: ~400-460 lbs packaged beef ($4,200). Best value for large families or co-ops. Full custom cut sheet. Requires ~16.0 cu ft freezer.
+   - Eighth Sampler: ~50-58 lbs packaged beef ($620). Fits in standard refrigerator freezer (~2.0 cu ft).
+2. Hanging Weight vs Packaged Weight:
+   - Hanging weight is the weight of the carcass after harvest & skinning before dry-aging and trimming.
+   - Packaged (take-home) weight is ~60% to 65% of the hanging weight after dry aging (14-21 days) and bone/fat trimming. We quote and sell based on actual take-home cut packages or transparent hanging estimates!
+3. Available Cuts:
+   - Steaks: Ribeye, New York Strip, Tenderloin/Filet Mignon, T-Bone, Porterhouse, Sirloin, Flank, Skirt.
+   - Roasts: Chuck Roast, Prime Rib, Arm Roast, Rump Roast, Brisket, Short Ribs, Stew Meat.
+   - Burger: 85/15 lean-to-fat ratio artisan ground beef vacuum sealed in 1 lb packages.
+4. USDA Processing & Quality:
+   - Processed in a federally inspected USDA facility.
+   - Aged for 14-21 days for maximum tenderness and deep flavor development.
+   - Heavy-duty vacuum-sealed in 4mil protective film (prevents freezer burn up to 2 years).
+   - Flash-frozen at -20°F.
+5. Shipping, Delivery & Pickup:
+   - Shipped via OGFCARGO Cold Chain Logistics in heavy insulated eco-coolers with dry ice. Guaranteed frozen arrival!
+   - Pickup options available directly at Sheridan Ranch Station, MT or partner USDA processor facilities.
+6. Ordering & Payment:
+   - Reserve online with 50% deposit or full payment.
+   - Major credit cards, Apple Pay, electronic check accepted.
+7. Farm Practices:
+   - Pasture-raised in Montana valleys with clean mountain water. No added growth hormones, no subtherapeutic antibiotics.
+   - Choose between 100% Grass-Fed & Finished (leaner, earthy flavor) or Pasture-Raised Grain-Finished (rich marbling and buttery flavor).
+
+Behavior Guidelines:
+- Answer naturally and directly. Do NOT repeat fixed scripts.
+- Speak conversationally like a knowledgeable Montana rancher and master butcher.
+- Ask relevant follow-up questions when helpful (e.g., asking about household size, freezer space, or cooking preferences).
+- Only advise contacting customer service if a specific custom request cannot be answered by standard knowledge.`;
+
+    // Construct content array if history exists
+    let contents: any = prompt;
+    if (Array.isArray(history) && history.length > 0) {
+      const formattedHistory = history.map((item: any) => ({
+        role: item.role === 'user' ? 'user' : 'model',
+        parts: [{ text: item.text || item.content }],
+      }));
+      formattedHistory.push({ role: 'user', parts: [{ text: prompt }] });
+      contents = formattedHistory;
+    }
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: prompt,
+      contents,
       config: {
         systemInstruction,
         temperature: 0.7,
       },
     });
 
-    const reply = response.text || 'Thank you for reaching out to Bastanzi Beef & OGFCARGO. How else may I assist you today?';
+    const reply = response.text || 'Thank you for reaching out to Bastanzi Beef. How else can I assist you with your beef share selection today?';
 
     return res.status(200).json({ reply, success: true });
   } catch (err: any) {
     console.error('Gemini Assistant error:', err);
     return res.status(200).json({
-      reply: getFallbackAnswer(req.body?.prompt || ''),
+      reply: getDynamicFallbackAnswer(req.body?.prompt || '', req.body?.history),
       error: err.message,
     });
   }
 }
 
-function getFallbackAnswer(prompt: string): string {
+function getDynamicFallbackAnswer(prompt: string, history?: any[]): string {
   const lower = prompt.toLowerCase();
-  if (lower.includes('freezer') || lower.includes('space') || lower.includes('cubic')) {
-    return 'Our Quarter share requires ~4.0 cubic feet of freezer space, a Half share requires ~8.0 cubic feet, and a Full share requires ~16.0 cubic feet. Standard chest or upright freezers work perfectly!';
+
+  if (lower.includes('hanging') || lower.includes('yield') || lower.includes('packaged weight') || lower.includes('cut weight')) {
+    return 'Hanging weight refers to the carcass weight right after harvest before dry aging and trimming. When dry-aged (14-21 days) and butchered, your actual packaged take-home beef yield is typically about 60% to 65% of hanging weight. For example, a 200 lb hanging quarter share yields ~110-120 lbs of cut, vacuum-sealed meat in your freezer! Do you have a specific share size in mind?';
   }
-  if (lower.includes('shipping') || lower.includes('track') || lower.includes('delivery')) {
-    return 'All shipments are dispatched via OGFCARGO Cold Chain Logistics inside heavy-duty insulated coolers with dry ice. You can track your shipment anytime on our website using your reservation ID (RES-XXXXXXX) or tracking number (OGF-XXXXXXX).';
+
+  if (lower.includes('freezer') || lower.includes('storage') || lower.includes('cu ft') || lower.includes('cubic')) {
+    return 'A general rule of thumb is 1 cubic foot of freezer space per 35-40 lbs of packaged beef. A Quarter share (~100 lbs) needs about 3.5 to 4 cubic feet (a small chest freezer), a Half share (~200 lbs) needs 8 cubic feet, and a Whole share needs ~16 cubic feet. Would you like help calculating freezer space for your household?';
   }
-  if (lower.includes('grain') || lower.includes('grass') || lower.includes('finish')) {
-    return 'We offer both 100% Grass-Fed & Finished (leaner, rich natural flavor) and Pasture-Raised Grain-Finished (luxurious marbling and buttery tenderness). Both options are 100% raised without hormones or antibiotics.';
+
+  if (lower.includes('usda') || lower.includes('process') || lower.includes('butcher') || lower.includes('dry age') || lower.includes('age')) {
+    return 'All Bastanzi cattle are processed in a USDA-inspected facility. Our beef undergoes a dry-aging process for 14 to 21 days to enhance tenderness and flavor, then each cut is individually vacuum-sealed in 4mil heavy packaging and flash-frozen at -20°F. Would you like to know more about custom cut sheet choices?';
   }
-  return 'Welcome to Bastanzi Premium Beef Co.! We provide pasture-raised, artisan-butchered beef shares directly to your doorstep with guaranteed OGFCARGO cold-chain delivery. Let us know if you need assistance calculating freezer space or reserving your share.';
+
+  if (lower.includes('cut') || lower.includes('ribeye') || lower.includes('steak') || lower.includes('ground') || lower.includes('roast')) {
+    return 'Our beef shares include a balanced selection of luxury cuts: Ribeyes, New York Strips, Filet Mignon/Tenderloin, T-Bones (on half & whole shares), Chuck and Rump Roasts, Brisket, Short Ribs, and 85/15 artisan ground beef in 1 lb vacuum packs. Are you looking for specific cuts for grilling or slow-cooking?';
+  }
+
+  if (lower.includes('ship') || lower.includes('delivery') || lower.includes('pickup') || lower.includes('track') || lower.includes('carrier')) {
+    return 'We ship directly to your door using OGFCARGO Cold Chain Logistics inside heavy dry-ice insulated eco-coolers. You will receive a tracking waybill (OGF-XXXXXXX) to monitor real-time shipping. Pickup is also available at our Sheridan, MT ranch station or local processing center! Where are you located?';
+  }
+
+  if (lower.includes('price') || lower.includes('cost') || lower.includes('deposit') || lower.includes('pay')) {
+    return 'Our pricing is all-inclusive with no hidden butcher fees: Quarter Share is $1,150 (~$10-11/lb take-home), Half Share is $2,200, Whole Share is $4,200, and our Eighth Sampler is $620. We accept online reservations with a 50% deposit or full payment. Would you like to place a reservation?';
+  }
+
+  if (lower.includes('grass') || lower.includes('grain') || lower.includes('finish') || lower.includes('practice') || lower.includes('farm') || lower.includes('ranch')) {
+    return 'We raise all cattle on lush Montana pastures without added growth hormones or antibiotics. We offer two finishing styles: 100% Grass-Fed & Finished (leaner, rich natural flavor) and Pasture-Raised Grain-Finished (exceptional marbling and buttery tenderness). Which flavor profile does your family prefer?';
+  }
+
+  return 'Welcome to Bastanzi Premium Beef Co.! I can answer questions regarding our Quarter, Half, and Whole beef shares, available cuts, USDA dry-aging process, freezer storage requirements, or OGFCARGO cold chain shipping. What topic would you like to explore today?';
 }

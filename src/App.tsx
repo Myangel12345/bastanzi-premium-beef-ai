@@ -15,6 +15,7 @@ import FaqPage from './pages/FaqPage';
 import ContactPage from './pages/ContactPage';
 import ReservationPage from './pages/ReservationPage';
 import TrackingPage from './pages/TrackingPage';
+import CustomerPortalPage from './pages/CustomerPortalPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 
 import { ShareSize } from './types';
@@ -32,7 +33,7 @@ export default function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const rawHash = window.location.hash.replace('#', '').split('?')[0];
-      if (['home', 'about', 'shares', 'gallery', 'faq', 'contact', 'reservation', 'track', 'admin'].includes(rawHash)) {
+      if (['home', 'about', 'shares', 'gallery', 'faq', 'contact', 'reservation', 'track', 'portal', 'admin'].includes(rawHash)) {
         setActiveTab(rawHash);
       }
     };
@@ -72,6 +73,7 @@ export default function App() {
         {activeTab === 'shares' && <BeefSharesPage onSelectShare={handleSelectShare} />}
         {activeTab === 'gallery' && <GalleryPage />}
         {activeTab === 'track' && <TrackingPage />}
+        {activeTab === 'portal' && <CustomerPortalPage />}
         {activeTab === 'faq' && <FaqPage setActiveTab={changeTab} />}
         {activeTab === 'contact' && <ContactPage />}
         {activeTab === 'reservation' && (
