@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu, X, Phone, ShieldCheck, Share2, FileCode2, Code, User } from 'lucide-react';
+import { Menu, X, Phone, ShieldCheck, Share2, FileCode2, Code } from 'lucide-react';
 import { BRAND_IMAGES, BUSINESS_INFO } from '../data/content';
 
 interface HeaderProps {
@@ -24,11 +24,8 @@ export default function Header({
     { id: 'about', label: 'About Our Ranch' },
     { id: 'shares', label: 'Beef Shares' },
     { id: 'gallery', label: 'Gallery' },
-    { id: 'track', label: 'Track Order' },
-    { id: 'portal', label: 'Customer Portal' },
     { id: 'faq', label: 'FAQ' },
     { id: 'contact', label: 'Contact' },
-    { id: 'admin', label: 'Admin Portal' },
   ];
 
   const handleNavClick = (id: string) => {
@@ -46,7 +43,7 @@ export default function Header({
           <span>USDA Inspected & 21-Day Dry Aged</span>
         </div>
         <div className="mx-auto sm:mx-0 font-medium tracking-widest text-[11px] sm:text-xs text-amber-100">
-          ✨ ACCEPTING FALL HERD RESERVATIONS • LIMITED QUANTITIES
+          ✨ ACCEPTING FALL 2026 HERD RESERVATIONS • LIMITED QUANTITIES
         </div>
         <div className="hidden md:flex items-center gap-4 text-xs font-sans">
           <a
@@ -85,14 +82,14 @@ export default function Header({
         </button>
 
         {/* Desktop Nav Items */}
-        <nav className="hidden lg:flex items-center gap-6">
+        <nav className="hidden lg:flex items-center gap-8">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
-                className={`text-xs font-medium tracking-wide transition-all relative py-1 focus:outline-none ${
+                className={`text-sm font-medium tracking-wide transition-all relative py-1 focus:outline-none ${
                   isActive
                     ? 'text-amber-300 font-semibold'
                     : 'text-stone-300 hover:text-amber-200'
@@ -109,6 +106,34 @@ export default function Header({
 
         {/* Action Buttons & Modal Tools */}
         <div className="hidden sm:flex items-center gap-3">
+          {/* SEO & Dev Tools */}
+          <div className="flex items-center gap-1.5 border-r border-zinc-800 pr-3 mr-1 text-zinc-400">
+            <button
+              onClick={onOpenOgModal}
+              title="Open Graph Preview"
+              className="p-1.5 rounded hover:bg-zinc-800 hover:text-amber-300 transition-colors text-xs flex items-center gap-1"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span className="text-[11px] hidden xl:inline">OG Preview</span>
+            </button>
+            <button
+              onClick={onOpenSitemapModal}
+              title="Sitemap.xml Preview"
+              className="p-1.5 rounded hover:bg-zinc-800 hover:text-amber-300 transition-colors text-xs flex items-center gap-1"
+            >
+              <FileCode2 className="w-3.5 h-3.5" />
+              <span className="text-[11px] hidden xl:inline">Sitemap</span>
+            </button>
+            <button
+              onClick={onOpenVercelModal}
+              title="Deployment Setup"
+              className="p-1.5 rounded hover:bg-zinc-800 hover:text-amber-300 transition-colors text-xs flex items-center gap-1"
+            >
+              <Code className="w-3.5 h-3.5" />
+              <span className="text-[11px] hidden xl:inline">Deployment</span>
+            </button>
+          </div>
+
           <button
             onClick={() => handleNavClick('reservation')}
             className={`px-5 py-2.5 rounded-full font-serif text-xs font-semibold uppercase tracking-widest transition-all shadow-md ${
@@ -117,12 +142,12 @@ export default function Header({
                 : 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-black hover:brightness-110 hover:shadow-amber-500/20'
             }`}
           >
-            Reserve Share
+            Reserve Your Share
           </button>
         </div>
 
         {/* Mobile Hamburger Toggle */}
-        <div className="flex items-center gap-2 lg:hidden">
+        <div className="flex items-center gap-2 sm:hidden">
           <button
             onClick={() => handleNavClick('reservation')}
             className="px-3 py-1.5 rounded-full bg-amber-400 text-black text-[11px] font-bold uppercase tracking-wider"
@@ -164,6 +189,18 @@ export default function Header({
               className="w-full text-center py-3 bg-gradient-to-r from-amber-500 to-amber-400 text-emerald-950 font-serif font-bold uppercase tracking-widest rounded-lg shadow-lg"
             >
               Reserve Beef Share
+            </button>
+          </div>
+
+          <div className="pt-4 border-t border-emerald-900/60 flex items-center justify-around text-xs text-stone-400">
+            <button onClick={onOpenOgModal} className="flex items-center gap-1 hover:text-amber-300">
+              <Share2 className="w-3.5 h-3.5" /> OG Cards
+            </button>
+            <button onClick={onOpenSitemapModal} className="flex items-center gap-1 hover:text-amber-300">
+              <FileCode2 className="w-3.5 h-3.5" /> Sitemap
+            </button>
+            <button onClick={onOpenVercelModal} className="flex items-center gap-1 hover:text-amber-300">
+              <Code className="w-3.5 h-3.5" /> Deploy Info
             </button>
           </div>
         </div>
