@@ -156,6 +156,13 @@ export default function FreezerCalculator({ onSelectShare }: FreezerCalculatorPr
             <Check className="w-4 h-4" />
             <span>Reserve {selectedTier.title} (${selectedTier.depositAmount} Deposit)</span>
           </button>
+
+          <p className="text-[11px] text-zinc-400 text-center mt-3 font-light">
+            Need smaller portions or custom cut bundles (&lt; 1/8th Share)?{' '}
+            <a href="#contact" className="text-amber-400 hover:underline font-serif font-bold">
+              Contact for Pricing
+            </a>
+          </p>
         </div>
       </div>
     </div>

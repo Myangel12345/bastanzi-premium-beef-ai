@@ -6,9 +6,10 @@ import SeoHead from '../components/SeoHead';
 
 interface BeefSharesPageProps {
   onSelectShare: (shareSize: ShareSize) => void;
+  onNavigateToContact?: () => void;
 }
 
-export default function BeefSharesPage({ onSelectShare }: BeefSharesPageProps) {
+export default function BeefSharesPage({ onSelectShare, onNavigateToContact }: BeefSharesPageProps) {
   const [selectedShareModal, setSelectedShareModal] = useState<ShareSize | null>(null);
   const [expandedTier, setExpandedTier] = useState<ShareSize>('Half');
 
@@ -108,6 +109,40 @@ export default function BeefSharesPage({ onSelectShare }: BeefSharesPageProps) {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Smaller Shares & Custom Bundles (< 1/8th Beef Share) Callout */}
+        <div className="bg-[#14281d] border border-amber-500/40 rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl relative overflow-hidden">
+          <div className="space-y-2 text-center md:text-left">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-amber-400 bg-emerald-950 px-3 py-1 rounded-full border border-amber-500/30">
+              SMALLER PORTIONS & CUSTOM BUNDLES
+            </span>
+            <h3 className="font-serif text-2xl font-bold text-amber-100">
+              Shares Smaller Than an Eighth Beef Share (&lt; 50 lbs)
+            </h3>
+            <p className="text-stone-300 text-xs sm:text-sm max-w-2xl font-light leading-relaxed">
+              Looking for custom individual cut boxes, small family sampler packs, or trial orders smaller than our 1/8th Beef Share? We offer tailored custom bundles to fit your exact freezer space and culinary preferences.
+            </p>
+            <div className="flex flex-wrap gap-4 text-xs font-mono text-amber-300 pt-1">
+              <span>• Custom Packaged Weight (&lt; 50 lbs)</span>
+              <span>• Fits Standard Fridge Freezer</span>
+              <span>• 21-Day Dry Aged</span>
+            </div>
+          </div>
+
+          <div className="shrink-0 text-center space-y-2 w-full md:w-auto">
+            <span className="text-xs text-stone-400 block font-mono">Custom Pricing:</span>
+            <span className="font-serif font-bold text-xl sm:text-2xl text-amber-300 block bg-[#0c1a12] px-4 py-2 rounded-xl border border-amber-500/30">
+              Contact for Pricing
+            </span>
+            <button
+              onClick={() => onNavigateToContact ? onNavigateToContact() : (window.location.hash = 'contact')}
+              className="w-full md:w-auto px-6 py-3 bg-amber-500 hover:bg-amber-400 text-emerald-950 font-serif font-bold text-xs uppercase tracking-widest rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+            >
+              <span>Inquire for Custom Pricing</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Detailed Cut Breakdown Accordions */}

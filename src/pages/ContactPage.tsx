@@ -225,30 +225,19 @@ export default function ContactPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-stone-300 font-serif block mb-1">Phone Number</label>
-                    <input
-                      type="tel"
-                      placeholder="e.g. (555) 000-0000"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full bg-[#0c1a12] border border-emerald-800/60 focus:border-amber-400 rounded-lg px-3.5 py-2.5 text-white placeholder-stone-400 focus:outline-none font-light"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-stone-300 font-serif block mb-1">Inquiry Topic</label>
-                    <select
-                      value={formData.subject}
-                      onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                      className="w-full bg-[#0c1a12] border border-emerald-800/60 focus:border-amber-400 rounded-lg px-3.5 py-2.5 text-white focus:outline-none font-light"
-                    >
-                      <option value="Beef Share Inquiry">Beef Share Inquiry</option>
-                      <option value="Custom Butcher Request">Custom Butcher Request</option>
-                      <option value="Shipping & Delivery Question">Shipping & Delivery Question</option>
-                      <option value="Wholesale / Restaurant Order">Wholesale / Restaurant Order</option>
-                    </select>
-                  </div>
+                <div>
+                  <label className="text-stone-300 font-serif block mb-1">Inquiry Topic</label>
+                  <select
+                    value={formData.subject}
+                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                    className="w-full bg-[#0c1a12] border border-emerald-800/60 focus:border-amber-400 rounded-lg px-3.5 py-2.5 text-white focus:outline-none font-light"
+                  >
+                    <option value="Beef Share Inquiry">Beef Share Inquiry</option>
+                    <option value="Custom / Smaller Share Pricing Request (< 1/8 Share)">Custom / Smaller Share Pricing Request (&lt; 1/8 Share)</option>
+                    <option value="Custom Butcher Request">Custom Butcher Request</option>
+                    <option value="Shipping & Delivery Question">Shipping & Delivery Question</option>
+                    <option value="Wholesale / Restaurant Order">Wholesale / Restaurant Order</option>
+                  </select>
                 </div>
 
                 <div>

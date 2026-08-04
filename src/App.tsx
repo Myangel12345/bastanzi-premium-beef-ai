@@ -4,6 +4,7 @@ import Footer from './components/Footer';
 import OpenGraphModal from './components/OpenGraphModal';
 import SitemapModal from './components/SitemapModal';
 import VercelConfigModal from './components/VercelConfigModal';
+import BeefConciergeChat from './components/BeefConciergeChat';
 
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
@@ -65,7 +66,12 @@ export default function App() {
           <HomePage setActiveTab={changeTab} onSelectShare={handleSelectShare} />
         )}
         {activeTab === 'about' && <AboutPage setActiveTab={changeTab} />}
-        {activeTab === 'shares' && <BeefSharesPage onSelectShare={handleSelectShare} />}
+        {activeTab === 'shares' && (
+          <BeefSharesPage
+            onSelectShare={handleSelectShare}
+            onNavigateToContact={() => changeTab('contact')}
+          />
+        )}
         {activeTab === 'gallery' && <GalleryPage />}
         {activeTab === 'faq' && <FaqPage setActiveTab={changeTab} />}
         {activeTab === 'contact' && <ContactPage />}
@@ -86,6 +92,12 @@ export default function App() {
       <OpenGraphModal isOpen={ogModalOpen} onClose={() => setOgModalOpen(false)} />
       <SitemapModal isOpen={sitemapModalOpen} onClose={() => setSitemapModalOpen(false)} />
       <VercelConfigModal isOpen={vercelModalOpen} onClose={() => setVercelModalOpen(false)} />
+
+      {/* AI Beef Concierge Chat Widget */}
+      <BeefConciergeChat
+        onNavigateToReservation={() => changeTab('reservation')}
+        onNavigateToContact={() => changeTab('contact')}
+      />
     </div>
   );
 }

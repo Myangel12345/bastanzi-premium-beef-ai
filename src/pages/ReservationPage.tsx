@@ -62,7 +62,7 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
       setStep(2);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (step === 2) {
-      if (!formData.name || !formData.email || !formData.phone || !formData.address) {
+      if (!formData.name || !formData.email || !formData.address) {
         setErrorMsg('Please complete all required customer and delivery fields.');
         return;
       }
@@ -305,6 +305,18 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
                       );
                     })}
                   </div>
+
+                  <div className="mt-3 p-3 bg-[#0c1a12] border border-amber-500/30 rounded-xl flex flex-col sm:flex-row items-center justify-between text-xs gap-2">
+                    <span className="text-stone-300 font-light text-center sm:text-left">
+                      Looking for custom bundles or portions smaller than an Eighth Share (&lt; 50 lbs)?
+                    </span>
+                    <a
+                      href="#contact"
+                      className="text-amber-400 font-serif font-bold hover:underline shrink-0 bg-[#14281d] px-3 py-1.5 rounded-lg border border-amber-500/30"
+                    >
+                      Contact for Pricing →
+                    </a>
+                  </div>
                 </div>
 
                 {/* Finishing Option */}
@@ -392,30 +404,17 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-stone-300 font-serif block mb-1">Phone Number *</label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="e.g. (582) 555-0199"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full bg-[#0c1a12] border border-emerald-800/60 focus:border-amber-400 rounded-lg px-3.5 py-2.5 text-white placeholder-stone-400 focus:outline-none font-light"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-stone-300 font-serif block mb-1">Preferred Delivery Batch</label>
-                    <select
-                      value={formData.preferredDeliveryDate}
-                      onChange={(e) => setFormData({ ...formData, preferredDeliveryDate: e.target.value })}
-                      className="w-full bg-[#0c1a12] border border-emerald-800/60 focus:border-amber-400 rounded-lg px-3.5 py-2.5 text-white focus:outline-none font-light"
-                    >
-                      <option value="Fall 2026 Batch (Sept - Oct)">Fall 2026 Batch (Sept - Oct)</option>
-                      <option value="Late Fall 2026 Batch (Nov - Dec)">Late Fall 2026 Batch (Nov - Dec)</option>
-                      <option value="Winter 2027 Batch (Jan - Feb)">Winter 2027 Batch (Jan - Feb)</option>
-                    </select>
-                  </div>
+                <div>
+                  <label className="text-stone-300 font-serif block mb-1">Preferred Delivery Batch</label>
+                  <select
+                    value={formData.preferredDeliveryDate}
+                    onChange={(e) => setFormData({ ...formData, preferredDeliveryDate: e.target.value })}
+                    className="w-full bg-[#0c1a12] border border-emerald-800/60 focus:border-amber-400 rounded-lg px-3.5 py-2.5 text-white focus:outline-none font-light"
+                  >
+                    <option value="Fall 2026 Batch (Sept - Oct)">Fall 2026 Batch (Sept - Oct)</option>
+                    <option value="Late Fall 2026 Batch (Nov - Dec)">Late Fall 2026 Batch (Nov - Dec)</option>
+                    <option value="Winter 2027 Batch (Jan - Feb)">Winter 2027 Batch (Jan - Feb)</option>
+                  </select>
                 </div>
 
                 <div>
@@ -503,7 +502,7 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
                     </div>
                     <div>
                       <p><strong>Customer:</strong> {formData.name}</p>
-                      <p><strong>Contact:</strong> {formData.email} | {formData.phone}</p>
+                      <p><strong>Contact Email:</strong> {formData.email}</p>
                       <p><strong>Address:</strong> {formData.address}, {formData.city}, {formData.state} {formData.zip}</p>
                       <p><strong>Target Window:</strong> {formData.preferredDeliveryDate}</p>
                     </div>
@@ -526,7 +525,7 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
                 <div className="p-4 bg-[#0c1a12] border border-amber-500/30 rounded-xl flex items-center gap-3">
                   <ShieldCheck className="w-5 h-5 text-amber-400 shrink-0" />
                   <p className="text-stone-300 text-[11px] font-light">
-                    By submitting this reservation, your animal share allocation is locked. No payment is charged right now — our concierge will phone you to place your ${selectedTier.depositAmount} deposit.
+                    By submitting this reservation, your animal share allocation is locked. No payment is charged right now — our concierge will email you at {formData.email || 'your email'} to coordinate your ${selectedTier.depositAmount} deposit.
                   </p>
                 </div>
 
