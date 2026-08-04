@@ -24,15 +24,15 @@ export const BUSINESS_INFO = {
 };
 
 export const BRAND_IMAGES = {
-  logo: '/src/assets/images/bastanzi_logo_emblem_1785603131833.jpg',
-  heroRanch: '/src/assets/images/bastanzi_founders_trays_1785603314280.jpg',
-  primeRibeye: '/src/assets/images/prime_ribeye_steaks_1785603143408.jpg',
-  beefShareBox: '/src/assets/images/delivered_share_box_1785603268742.jpg',
-  cookedSteak: '/src/assets/images/tbone_porterhouse_1785603154311.jpg',
-  ranchSunset: '/src/assets/images/bastanzi_hero_ranch_1785603078687.jpg',
-  pastureCattle: '/src/assets/images/kitchen_counter_pack_1785603301136.jpg',
-  tomahawkSteak: '/src/assets/images/strip_roast_1785603200463.jpg',
-  butcherBoard: '/src/assets/images/filet_mignon_cuts_1785603211893.jpg',
+  logo: '/images/bastanzi_logo_emblem_1785603131833.jpg',
+  heroRanch: '/images/bastanzi_founders_trays_1785603314280.jpg',
+  primeRibeye: '/images/prime_ribeye_steaks_1785603143408.jpg',
+  beefShareBox: '/images/delivered_share_box_1785603268742.jpg',
+  cookedSteak: '/images/tbone_porterhouse_1785603154311.jpg',
+  ranchSunset: '/images/bastanzi_hero_ranch_1785603078687.jpg',
+  pastureCattle: '/images/kitchen_counter_pack_1785603301136.jpg',
+  tomahawkSteak: '/images/strip_roast_1785603200463.jpg',
+  butcherBoard: '/images/filet_mignon_cuts_1785603211893.jpg',
 };
 
 export const BEEF_SHARE_TIERS: ShareTier[] = [
@@ -50,7 +50,7 @@ export const BEEF_SHARE_TIERS: ShareTier[] = [
     bestFor: 'Large families, avid entertainers, or neighborhood beef share splitters',
     depositAmount: 500,
     featured: true,
-    image: '/src/assets/images/delivered_share_box_1785603268742.jpg',
+    image: '/images/delivered_share_box_1785603268742.jpg',
     cutSummary: {
       steaks: [
         '16-20 Prime Ribeye Steaks (1.25" thick)',
@@ -85,7 +85,7 @@ export const BEEF_SHARE_TIERS: ShareTier[] = [
     cubicFeet: 9,
     bestFor: 'Families of 3 to 5 eating high-quality beef year-round',
     depositAmount: 300,
-    image: '/src/assets/images/kitchen_counter_pack_1785603301136.jpg',
+    image: '/images/kitchen_counter_pack_1785603301136.jpg',
     cutSummary: {
       steaks: [
         '8-10 Prime Ribeye Steaks',
@@ -120,7 +120,7 @@ export const BEEF_SHARE_TIERS: ShareTier[] = [
     cubicFeet: 4.5,
     bestFor: 'Couples and small families looking for 4-6 months of beef',
     depositAmount: 200,
-    image: '/src/assets/images/stocked_chest_freezer_1785603282435.jpg',
+    image: '/images/stocked_chest_freezer_1785603282435.jpg',
     cutSummary: {
       steaks: [
         '4-5 Ribeye Steaks',
@@ -152,7 +152,7 @@ export const BEEF_SHARE_TIERS: ShareTier[] = [
     cubicFeet: 2.2,
     bestFor: 'First-time buyers testing luxury pasture-raised beef',
     depositAmount: 100,
-    image: '/src/assets/images/bastanzi_founders_trays_1785603314280.jpg',
+    image: '/images/bastanzi_founders_trays_1785603314280.jpg',
     cutSummary: {
       steaks: [
         '2 Ribeye Steaks',
@@ -177,7 +177,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Premium Angus Cattle Grazing on Pasture',
     category: 'ranch',
     categoryLabel: 'Our Ranch & Herd',
-    imageUrl: '/src/assets/images/bastanzi_hero_ranch_1785603078687.jpg',
+    imageUrl: '/images/bastanzi_hero_ranch_1785603078687.jpg',
     description: 'Black Angus cattle grazing freely across wide open pristine pasture grass.',
   },
   {
@@ -185,7 +185,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Bastanzi Ranch Team & Cattle Operations',
     category: 'ranch',
     categoryLabel: 'Our Ranch & Herd',
-    imageUrl: '/src/assets/images/bastanzi_founders_trays_1785603314280.jpg',
+    imageUrl: '/images/bastanzi_founders_trays_1785603314280.jpg',
     description: 'Sustainable, low-stress pasture rotation and holistic cattle care operations.',
   },
   {
@@ -193,7 +193,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Whole, Half, and Quarter Beef Packages',
     category: 'packaging',
     categoryLabel: 'Freezer Packages',
-    imageUrl: '/src/assets/images/delivered_share_box_1785603268742.jpg',
+    imageUrl: '/images/delivered_share_box_1785603268742.jpg',
     description: 'Complete organized bulk beef share package assortments ready for long-term storage.',
   },
   {
@@ -201,7 +201,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Fresh USDA-Quality Ribeye Steaks',
     category: 'cuts',
     categoryLabel: 'Prime Steaks',
-    imageUrl: '/src/assets/images/prime_ribeye_steaks_1785603143408.jpg',
+    imageUrl: '/images/prime_ribeye_steaks_1785603143408.jpg',
     description: 'Heavy, intricate intramuscular marbling dry-aged for exceptional steakhouse flavor.',
   },
   {
@@ -209,7 +209,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'T-Bone & New York Strip Steaks',
     category: 'cuts',
     categoryLabel: 'Prime Steaks',
-    imageUrl: '/src/assets/images/tbone_porterhouse_1785603154311.jpg',
+    imageUrl: '/images/tbone_porterhouse_1785603154311.jpg',
     description: 'Hand-trimmed T-bone and New York strip steaks featuring dense marbling and bold flavor.',
   },
   {
@@ -217,7 +217,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Filet Mignon Tenderloin',
     category: 'cuts',
     categoryLabel: 'Prime Steaks',
-    imageUrl: '/src/assets/images/filet_mignon_cuts_1785603211893.jpg',
+    imageUrl: '/images/filet_mignon_cuts_1785603211893.jpg',
     description: 'Center-cut Filet Mignon tenderloin steaks with melt-in-your-mouth tenderness.',
   },
   {
@@ -225,7 +225,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Skirt & Sirloin Steaks',
     category: 'cuts',
     categoryLabel: 'Prime Steaks',
-    imageUrl: '/src/assets/images/flank_skirt_strips_1785603222196.jpg',
+    imageUrl: '/images/flank_skirt_strips_1785603222196.jpg',
     description: 'Flank and Skirt steaks, lean and juicy for grilling and pan-searing.',
   },
   {
@@ -233,7 +233,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'New York Strip Roast',
     category: 'cuts',
     categoryLabel: 'Roasts & Slow Cuts',
-    imageUrl: '/src/assets/images/strip_roast_1785603200463.jpg',
+    imageUrl: '/images/strip_roast_1785603200463.jpg',
     description: 'Classic beef strip roast featuring dense marbling and fat cap for roasting.',
   },
   {
@@ -241,7 +241,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'English Cut Short Ribs',
     category: 'cuts',
     categoryLabel: 'Roasts & Slow Cuts',
-    imageUrl: '/src/assets/images/english_short_ribs_1785603167290.jpg',
+    imageUrl: '/images/english_short_ribs_1785603167290.jpg',
     description: 'Thick English cut beef short rib racks with rich connective tissue and meat.',
   },
   {
@@ -249,7 +249,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Artisan Beef Stew Cubes',
     category: 'cuts',
     categoryLabel: 'Roasts & Slow Cuts',
-    imageUrl: '/src/assets/images/artisan_stew_beef_1785603256501.jpg',
+    imageUrl: '/images/artisan_stew_beef_1785603256501.jpg',
     description: 'Richly marbled chuck stew cubes, ideal for slow roasting, pot roast, and shredded beef.',
   },
   {
@@ -257,7 +257,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Fresh Oxtail Cuts',
     category: 'cuts',
     categoryLabel: 'Roasts & Slow Cuts',
-    imageUrl: '/src/assets/images/oxtail_cuts_1785603187200.jpg',
+    imageUrl: '/images/oxtail_cuts_1785603187200.jpg',
     description: 'Flavorful oxtail cross section cuts tailored for slow braising and rich broth.',
   },
   {
@@ -265,7 +265,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Gourmet Ground Beef Block',
     category: 'cuts',
     categoryLabel: 'Roasts & Slow Cuts',
-    imageUrl: '/src/assets/images/gourmet_ground_beef_1785603243471.jpg',
+    imageUrl: '/images/gourmet_ground_beef_1785603243471.jpg',
     description: 'Single-source artisan ground beef ground from whole muscle trimmings.',
   },
   {
@@ -273,7 +273,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Kitchen Island Beef Packaging',
     category: 'packaging',
     categoryLabel: 'Packaging',
-    imageUrl: '/src/assets/images/kitchen_counter_pack_1785603301136.jpg',
+    imageUrl: '/images/kitchen_counter_pack_1785603301136.jpg',
     description: '1lb flash-frozen ground beef and steak vacuum packs sorted on kitchen island.',
   },
   {
@@ -281,7 +281,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Chest Freezer Stocked with Packaged Beef',
     category: 'packaging',
     categoryLabel: 'Packaging',
-    imageUrl: '/src/assets/images/stocked_chest_freezer_1785603282435.jpg',
+    imageUrl: '/images/stocked_chest_freezer_1785603282435.jpg',
     description: 'Deep chest freezer filled to the brim with white-labeled vacuum-sealed Bastanzi beef packages.',
   },
   {
@@ -289,7 +289,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Delivered Bastanzi Share Box',
     category: 'packaging',
     categoryLabel: 'Packaging',
-    imageUrl: '/src/assets/images/delivered_share_box_1785603268742.jpg',
+    imageUrl: '/images/delivered_share_box_1785603268742.jpg',
     description: 'Commercial 5mil heavy-duty vacuum sealed barrier protection inside delivered box.',
   },
   {
@@ -297,7 +297,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Ranch Founders Displaying Trays',
     category: 'packaging',
     categoryLabel: 'Packaging',
-    imageUrl: '/src/assets/images/bastanzi_founders_trays_1785603314280.jpg',
+    imageUrl: '/images/bastanzi_founders_trays_1785603314280.jpg',
     description: 'Bastanzi team members holding trays of packaged beef cuts.',
   },
   {
@@ -305,7 +305,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Professionally Butchered & Packaged Beef',
     category: 'packaging',
     categoryLabel: 'Packaging',
-    imageUrl: '/src/assets/images/kitchen_counter_pack_1785603301136.jpg',
+    imageUrl: '/images/kitchen_counter_pack_1785603301136.jpg',
     description: 'Handcrafted precision butcher processing meeting strict USDA inspection standards.',
   },
   {
@@ -313,7 +313,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Fresh Marbled Steaks Selection',
     category: 'cuts',
     categoryLabel: 'Prime Steaks',
-    imageUrl: '/src/assets/images/prime_ribeye_steaks_1785603143408.jpg',
+    imageUrl: '/images/prime_ribeye_steaks_1785603143408.jpg',
     description: 'Raw French-cut bone-in steaks resting fresh on classic slate board.',
   },
   {
@@ -321,7 +321,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'T-Bone & Porterhouse Cuts',
     category: 'cuts',
     categoryLabel: 'Prime Steaks',
-    imageUrl: '/src/assets/images/tbone_porterhouse_1785603154311.jpg',
+    imageUrl: '/images/tbone_porterhouse_1785603154311.jpg',
     description: 'Thick cut T-Bone steaks resting with fresh herbs.',
   },
   {
@@ -329,7 +329,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Bastanzi Founders & Customer Delivery',
     category: 'culinary',
     categoryLabel: 'Culinary & Family',
-    imageUrl: '/src/assets/images/bastanzi_founders_trays_1785603314280.jpg',
+    imageUrl: '/images/bastanzi_founders_trays_1785603314280.jpg',
     description: 'Ranch owners presenting seasonal beef share cuts to customers.',
   },
   {
@@ -337,7 +337,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Pasture Herds in Morning Light',
     category: 'ranch',
     categoryLabel: 'Our Ranch & Herd',
-    imageUrl: '/src/assets/images/bastanzi_hero_ranch_1785603078687.jpg',
+    imageUrl: '/images/bastanzi_hero_ranch_1785603078687.jpg',
     description: 'Healthy Black Angus cattle grazing peacefully under golden morning sunlight.',
   },
   {
@@ -345,7 +345,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Raw 21-Day Dry Aged Ribeye Cut',
     category: 'cuts',
     categoryLabel: 'Prime Steaks',
-    imageUrl: '/src/assets/images/prime_ribeye_steaks_1785603143408.jpg',
+    imageUrl: '/images/prime_ribeye_steaks_1785603143408.jpg',
     description: 'Fresh raw 21-day dry aged Ribeye steak with dense intramuscular marbling.',
   },
   {
@@ -353,7 +353,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Freezer Stocked with Packaged Beef',
     category: 'packaging',
     categoryLabel: 'Packaging',
-    imageUrl: '/src/assets/images/stocked_chest_freezer_1785603282435.jpg',
+    imageUrl: '/images/stocked_chest_freezer_1785603282435.jpg',
     description: 'Vacuum-sealed beef packages neatly arranged in chest freezer.',
   },
   {
@@ -361,7 +361,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Ranch Mountain Water Pastures',
     category: 'ranch',
     categoryLabel: 'Our Ranch & Herd',
-    imageUrl: '/src/assets/images/bastanzi_hero_ranch_1785603078687.jpg',
+    imageUrl: '/images/bastanzi_hero_ranch_1785603078687.jpg',
     description: 'Pristine pasture grass nourishing cattle for natural grazing.',
   },
   {
@@ -369,7 +369,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Team Counter Assembly',
     category: 'cuts',
     categoryLabel: 'Prime Steaks',
-    imageUrl: '/src/assets/images/kitchen_counter_pack_1785603301136.jpg',
+    imageUrl: '/images/kitchen_counter_pack_1785603301136.jpg',
     description: 'Ranch team selecting prime cuts tailored to customer share orders.',
   },
   {
@@ -377,7 +377,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'T-Bone & Porterhouse Steak',
     category: 'cuts',
     categoryLabel: 'Prime Steaks',
-    imageUrl: '/src/assets/images/tbone_porterhouse_1785603154311.jpg',
+    imageUrl: '/images/tbone_porterhouse_1785603154311.jpg',
     description: 'Thick bone-in steak with intense intramuscular marbling.',
   },
   {
@@ -385,7 +385,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Delivered Share Box Packaging',
     category: 'packaging',
     categoryLabel: 'Packaging',
-    imageUrl: '/src/assets/images/delivered_share_box_1785603268742.jpg',
+    imageUrl: '/images/delivered_share_box_1785603268742.jpg',
     description: 'Insulated cooler box ensuring frozen doorstep arrival.',
   },
   {
@@ -393,7 +393,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
     title: 'Raw Prime Filet Mignon Selection',
     category: 'cuts',
     categoryLabel: 'Prime Steaks',
-    imageUrl: '/src/assets/images/filet_mignon_cuts_1785603211893.jpg',
+    imageUrl: '/images/filet_mignon_cuts_1785603211893.jpg',
     description: 'Collection of raw artisan steaks showcasing deep red color and white marbling.',
   },
 ];

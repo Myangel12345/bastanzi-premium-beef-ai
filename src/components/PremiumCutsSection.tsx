@@ -14,7 +14,7 @@ export default function PremiumCutsSection() {
       marbling: 'High Intramuscular Marbling',
       cooking: 'High-Heat Cast Iron Sear / Grilling',
       description: 'Rich, juicy ribeye featuring intricate marbling streaks dry-aged for 21 days for maximum steakhouse tenderness.',
-      imageUrl: '/src/assets/images/prime_ribeye_steaks_1785603143408.jpg',
+      imageUrl: '/images/prime_ribeye_steaks_1785603143408.jpg',
       shareInclusion: 'Full, Half, Quarter & Eighth Shares',
     },
     {
@@ -25,7 +25,7 @@ export default function PremiumCutsSection() {
       marbling: 'Bold Edge Fat Cap & Dense Marbling',
       cooking: 'Pan Seared with Garlic Butter & Herbs',
       description: 'Classic steakhouse cut offering robust beef flavor, tight grain texture, and a flavorful outer fat ribbon.',
-      imageUrl: '/src/assets/images/tbone_porterhouse_1785603154311.jpg',
+      imageUrl: '/images/tbone_porterhouse_1785603154311.jpg',
       shareInclusion: 'Full, Half, Quarter & Eighth Shares',
     },
     {
@@ -36,7 +36,7 @@ export default function PremiumCutsSection() {
       marbling: 'Ultra-Lean & Extremely Tender',
       cooking: 'Reverse Sear / Butter Basted',
       description: 'The most tender muscle on the animal. Melt-in-your-mouth texture with delicate butter notes.',
-      imageUrl: '/src/assets/images/filet_mignon_cuts_1785603211893.jpg',
+      imageUrl: '/images/filet_mignon_cuts_1785603211893.jpg',
       shareInclusion: 'Full, Half & Quarter Shares',
     },
     {
@@ -47,7 +47,7 @@ export default function PremiumCutsSection() {
       marbling: 'Lean & Mineral-Rich',
       cooking: 'Grilling / Broiling / Kabobs',
       description: 'Versatile, juicy top sirloin steaks packed with intense beef flavor and clean finishing notes.',
-      imageUrl: '/src/assets/images/flank_skirt_strips_1785603222196.jpg',
+      imageUrl: '/images/flank_skirt_strips_1785603222196.jpg',
       shareInclusion: 'Full, Half, Quarter & Eighth Shares',
     },
     {
@@ -58,7 +58,7 @@ export default function PremiumCutsSection() {
       marbling: 'Complete Flat & Point Fat Cap',
       cooking: 'Low & Slow Wood Smoking (225°F)',
       description: 'Un-trimmed whole packer roast with thick fat cap ready for pitmasters and long weekend smokes.',
-      imageUrl: '/src/assets/images/strip_roast_1785603200463.jpg',
+      imageUrl: '/images/strip_roast_1785603200463.jpg',
       shareInclusion: 'Full & Half Shares (Optional Quarter)',
     },
     {
@@ -69,7 +69,7 @@ export default function PremiumCutsSection() {
       marbling: 'Deep Intermuscular Fat',
       cooking: 'Braising / Dutch Oven Stew',
       description: 'Hand-trimmed beef stew cubes that break down into fork-tender, melt-in-your-mouth pot roast and beef stew.',
-      imageUrl: '/src/assets/images/artisan_stew_beef_1785603256501.jpg',
+      imageUrl: '/images/artisan_stew_beef_1785603256501.jpg',
       shareInclusion: 'Full, Half, Quarter & Eighth Shares',
     },
     {
@@ -80,7 +80,7 @@ export default function PremiumCutsSection() {
       marbling: 'High Collagen & Deep Marbling',
       cooking: 'Red Wine Braise / Smoked Beef Ribs',
       description: 'Meaty bone-in short rib racks that become incredibly rich and tender when slow-braised.',
-      imageUrl: '/src/assets/images/english_short_ribs_1785603167290.jpg',
+      imageUrl: '/images/english_short_ribs_1785603167290.jpg',
       shareInclusion: 'Full, Half & Quarter Shares',
     },
     {
@@ -91,7 +91,7 @@ export default function PremiumCutsSection() {
       marbling: 'Pure Muscle & Clean Fat Blend',
       cooking: 'Smash Burgers / Meatballs / Tacos',
       description: 'Single-source artisan ground beef ground from whole muscle trimmings with zero additives or fillers.',
-      imageUrl: '/src/assets/images/gourmet_ground_beef_1785603243471.jpg',
+      imageUrl: '/images/gourmet_ground_beef_1785603243471.jpg',
       shareInclusion: 'All Beef Shares (Approx 45-50% of Total Weight)',
     },
   ];
