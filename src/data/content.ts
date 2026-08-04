@@ -25,7 +25,8 @@ export const BUSINESS_INFO = {
 
 export const BRAND_IMAGES = {
   logo: '/images/bastanzi_logo_emblem_1785603131833.jpg',
-  heroRanch: '/images/bastanzi_founders_trays_1785603314280.jpg',
+  heroRanch: '/images/bastanzi_hero_ranch_1785603078687.jpg',
+  founders: '/images/bastanzi_founders_trays_1785603314280.jpg',
   primeRibeye: '/images/prime_ribeye_steaks_1785603143408.jpg',
   beefShareBox: '/images/delivered_share_box_1785603268742.jpg',
   cookedSteak: '/images/tbone_porterhouse_1785603154311.jpg',
