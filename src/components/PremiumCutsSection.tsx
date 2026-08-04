@@ -11,21 +11,23 @@ export default function PremiumCutsSection() {
       name: 'USDA-Quality Ribeye Steak',
       category: 'steaks',
       thickness: '1.25" – 1.5" Thick Cut',
+      priceNotice: 'Contact us for pricing',
       marbling: 'High Intramuscular Marbling',
       cooking: 'High-Heat Cast Iron Sear / Grilling',
       description: 'Rich, juicy ribeye featuring intricate marbling streaks dry-aged for 21 days for maximum steakhouse tenderness.',
-      imageUrl: '/images/prime_ribeye_steaks_1785603143408.jpg',
+      imageUrl: '/images/bastanzi_ribeye_slate_1785838381086.jpg',
       shareInclusion: 'Full, Half, Quarter & Eighth Shares',
     },
     {
       id: 'cut-2',
-      name: 'New York Strip Steak / T-Bone',
+      name: 'New York Strip Steak & T-Bone',
       category: 'steaks',
       thickness: '1.25" Thick Cut',
+      priceNotice: 'Contact us for pricing',
       marbling: 'Bold Edge Fat Cap & Dense Marbling',
       cooking: 'Pan Seared with Garlic Butter & Herbs',
       description: 'Classic steakhouse cut offering robust beef flavor, tight grain texture, and a flavorful outer fat ribbon.',
-      imageUrl: '/images/tbone_porterhouse_1785603154311.jpg',
+      imageUrl: '/images/bastanzi_meat_display_1785838215157.jpg',
       shareInclusion: 'Full, Half, Quarter & Eighth Shares',
     },
     {
@@ -33,10 +35,11 @@ export default function PremiumCutsSection() {
       name: 'Center-Cut Filet Mignon',
       category: 'steaks',
       thickness: '1.5" – 2" Center Cut',
+      priceNotice: 'Contact us for pricing',
       marbling: 'Ultra-Lean & Extremely Tender',
       cooking: 'Reverse Sear / Butter Basted',
       description: 'The most tender muscle on the animal. Melt-in-your-mouth texture with delicate butter notes.',
-      imageUrl: '/images/filet_mignon_cuts_1785603211893.jpg',
+      imageUrl: '/images/bastanzi_filet_mignon_1785838437969.jpg',
       shareInclusion: 'Full, Half & Quarter Shares',
     },
     {
@@ -44,10 +47,11 @@ export default function PremiumCutsSection() {
       name: 'Top Sirloin & Skirt Steak',
       category: 'steaks',
       thickness: '1" – 1.25" Thick Cut',
+      priceNotice: 'Contact us for pricing',
       marbling: 'Lean & Mineral-Rich',
       cooking: 'Grilling / Broiling / Kabobs',
-      description: 'Versatile, juicy top sirloin steaks packed with intense beef flavor and clean finishing notes.',
-      imageUrl: '/images/flank_skirt_strips_1785603222196.jpg',
+      description: 'Versatile, juicy top sirloin and skirt steaks packed with intense beef flavor and clean finishing notes.',
+      imageUrl: '/images/bastanzi_skirt_strips_1785838348308.jpg',
       shareInclusion: 'Full, Half, Quarter & Eighth Shares',
     },
     {
@@ -55,43 +59,47 @@ export default function PremiumCutsSection() {
       name: 'Full Packer Brisket & Strip Roast',
       category: 'roasts',
       thickness: '10 – 14 lbs Whole Packer',
+      priceNotice: 'Contact us for pricing',
       marbling: 'Complete Flat & Point Fat Cap',
       cooking: 'Low & Slow Wood Smoking (225°F)',
-      description: 'Un-trimmed whole packer roast with thick fat cap ready for pitmasters and long weekend smokes.',
-      imageUrl: '/images/strip_roast_1785603200463.jpg',
+      description: 'Un-trimmed whole packer brisket and roasts with thick fat cap ready for pitmasters and long weekend smokes.',
+      imageUrl: '/images/bastanzi_boxed_roasts_1785838239509.jpg',
       shareInclusion: 'Full & Half Shares (Optional Quarter)',
     },
     {
       id: 'cut-6',
-      name: 'Artisan Stew Beef Cubes',
-      category: 'roasts',
-      thickness: '3 – 4 lbs Portion',
-      marbling: 'Deep Intermuscular Fat',
-      cooking: 'Braising / Dutch Oven Stew',
-      description: 'Hand-trimmed beef stew cubes that break down into fork-tender, melt-in-your-mouth pot roast and beef stew.',
-      imageUrl: '/images/artisan_stew_beef_1785603256501.jpg',
-      shareInclusion: 'Full, Half, Quarter & Eighth Shares',
-    },
-    {
-      id: 'cut-7',
-      name: 'English Cut Short Ribs',
+      name: 'Chuck Roast & English Short Ribs',
       category: 'roasts',
       thickness: 'Thick Bone-In Racks',
+      priceNotice: 'Contact us for pricing',
       marbling: 'High Collagen & Deep Marbling',
       cooking: 'Red Wine Braise / Smoked Beef Ribs',
-      description: 'Meaty bone-in short rib racks that become incredibly rich and tender when slow-braised.',
-      imageUrl: '/images/english_short_ribs_1785603167290.jpg',
+      description: 'Meaty bone-in short rib racks and chuck roasts that become incredibly rich and tender when slow-braised.',
+      imageUrl: '/images/bastanzi_english_shortribs_1785838367019.jpg',
       shareInclusion: 'Full, Half & Quarter Shares',
     },
     {
+      id: 'cut-7',
+      name: 'Artisan Stew Meat & Soup Bones',
+      category: 'roasts',
+      thickness: '3 – 4 lbs Portion',
+      priceNotice: 'Contact us for pricing',
+      marbling: 'Deep Intermuscular Fat & Marrow',
+      cooking: 'Braising / Dutch Oven Stew & Broth',
+      description: 'Hand-trimmed beef stew cubes and nutrient-rich marrow soup bones for rich beef broth.',
+      imageUrl: '/images/bastanzi_stew_cubes_1785838393915.jpg',
+      shareInclusion: 'Full, Half, Quarter & Eighth Shares',
+    },
+    {
       id: 'cut-8',
-      name: '80/20 & 90/10 Gourmet Ground Beef',
+      name: 'Gourmet Ground Beef (80/20 & 90/10)',
       category: 'ground',
       thickness: '1 lb Flash-Frozen Vacuum Chubs',
+      priceNotice: 'Contact us for pricing',
       marbling: 'Pure Muscle & Clean Fat Blend',
       cooking: 'Smash Burgers / Meatballs / Tacos',
       description: 'Single-source artisan ground beef ground from whole muscle trimmings with zero additives or fillers.',
-      imageUrl: '/images/gourmet_ground_beef_1785603243471.jpg',
+      imageUrl: '/images/bastanzi_countertop_boxes_1785838324488.jpg',
       shareInclusion: 'All Beef Shares (Approx 45-50% of Total Weight)',
     },
   ];
@@ -160,9 +168,14 @@ export default function PremiumCutsSection() {
                 </div>
 
                 <div className="p-5 space-y-3">
-                  <h3 className="font-serif text-lg font-bold text-amber-100 group-hover:text-amber-300 transition-colors">
-                    {cut.name}
-                  </h3>
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-serif text-lg font-bold text-amber-100 group-hover:text-amber-300 transition-colors">
+                      {cut.name}
+                    </h3>
+                  </div>
+                  <div className="inline-block px-2.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-mono font-medium">
+                    {cut.priceNotice}
+                  </div>
                   <p className="text-stone-300 text-xs leading-relaxed font-light">
                     {cut.description}
                   </p>
