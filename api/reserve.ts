@@ -31,8 +31,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       notes,
     } = body;
 
-    if (!name || !email || !phone || !shareSize) {
-      return res.status(400).json({ error: 'Missing required reservation fields (Name, Email, Phone, Share Size).' });
+    if (!name || !email || !shareSize) {
+      return res.status(400).json({ error: 'Missing required reservation fields (Name, Email, Share Size).' });
     }
 
     const reservationId = 'RES-' + Math.random().toString(36).substring(2, 9).toUpperCase();
@@ -42,7 +42,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       id: reservationId,
       name,
       email,
-      phone,
+      phone: phone || 'N/A',
       address: address || '',
       city: city || '',
       state: state || '',
