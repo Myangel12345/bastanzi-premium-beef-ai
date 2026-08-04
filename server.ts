@@ -26,24 +26,16 @@ app.all('/api/chat', (req, res) => chatHandler(req as any, res as any));
 app.all('/sitemap.xml', (req, res) => sitemapHandler(req as any, res as any));
 app.all('/robots.txt', (req, res) => robotsHandler(req as any, res as any));
 
-// Setup Vite or static serving
+// Setup Vite development server
 async function startServer() {
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
-  }
+  const vite = await createViteServer({
+    server: { middlewareMode: true },
+    appType: 'spa',
+  });
+  app.use(vite.middlewares);
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[Bastanzi Beef Co.] Server running on http://0.0.0.0:${PORT}`);
+    console.log(`[Bastanzi Beef Co.] Dev Server running on http://0.0.0.0:${PORT}`);
   });
 }
 
