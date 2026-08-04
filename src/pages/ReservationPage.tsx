@@ -76,9 +76,17 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
     setErrorMsg('');
 
     const payload: ReservationPayload = {
-      ...formData,
-      shareSize,
-      finish,
+      name: formData.name.trim(),
+      email: formData.email.trim(),
+      phone: formData.phone ? formData.phone.trim() : '',
+      address: formData.address ? formData.address.trim() : '',
+      city: formData.city ? formData.city.trim() : '',
+      state: formData.state ? formData.state.trim() : 'MT',
+      zip: formData.zip ? formData.zip.trim() : '',
+      shareSize: shareSize || formData.shareSize,
+      finish: finish || formData.finish,
+      preferredDeliveryDate: formData.preferredDeliveryDate,
+      notes: formData.notes ? formData.notes.trim() : '',
     };
 
     try {
@@ -89,7 +97,14 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
         body: JSON.stringify(payload),
       });
 
-      const serverData = await res.json();
+      const serverData = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        const errorText = serverData.error || serverData.message || `Server returned HTTP status ${res.status}`;
+        console.error('Reservation API error response:', res.status, errorText);
+        setErrorMsg(`Reservation Error: ${errorText}`);
+        return;
+      }
 
       // 2. Also save into Supabase database (or local store fallback)
       const dbResult = await saveReservationToDatabase(payload);
@@ -109,17 +124,8 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
       setReservationConfirmed(record);
       triggerConfetti();
     } catch (err: any) {
-      console.error('Reservation submission error:', err);
-      // Fallback local record
-      const record = {
-        id: 'RES-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
-        ...payload,
-        createdAt: new Date().toLocaleDateString(),
-        estimatedPrice: selectedTier.priceRange,
-        depositRequired: selectedTier.depositAmount,
-      };
-      setReservationConfirmed(record);
-      triggerConfetti();
+      console.error('Reservation submission exception:', err);
+      setErrorMsg(err?.message || 'Failed to submit reservation. Please check network connection.');
     } finally {
       setLoading(false);
     }

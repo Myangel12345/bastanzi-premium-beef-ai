@@ -15,24 +15,51 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
+  console.log('Incoming reservation request body:', req.body);
+
   try {
-    const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-    const {
-      name,
-      email,
-      phone,
-      address,
-      city,
-      state,
-      zip,
-      shareSize,
-      finish,
-      preferredDeliveryDate,
-      notes,
-    } = body;
+    let body: any = {};
+    if (typeof req.body === 'string') {
+      try {
+        body = JSON.parse(req.body);
+      } catch (e) {
+        console.error('Failed to parse req.body as JSON string:', e);
+        body = {};
+      }
+    } else if (Buffer.isBuffer(req.body)) {
+      try {
+        body = JSON.parse(req.body.toString('utf-8'));
+      } catch (e) {
+        console.error('Failed to parse req.body Buffer as JSON:', e);
+        body = {};
+      }
+    } else if (req.body && typeof req.body === 'object') {
+      body = req.body;
+    }
+
+    const name = body.name || body.fullName || body.customerName || '';
+    const email = body.email || body.customerEmail || '';
+    const phone = body.phone || body.phoneNumber || '';
+    const address = body.address || '';
+    const city = body.city || '';
+    const state = body.state || '';
+    const zip = body.zip || '';
+    const shareSize = body.shareSize || body.selectedShare || body.tier || '';
+    const finish = body.finish || body.finishingOption || '';
+    const preferredDeliveryDate = body.preferredDeliveryDate || body.deliveryDate || '';
+    const notes = body.notes || body.specialNotes || '';
 
     if (!name || !email || !shareSize) {
-      return res.status(400).json({ error: 'Missing required reservation fields (Name, Email, Share Size).' });
+      console.log('Reservation validation failure:', {
+        hasName: !!name,
+        hasEmail: !!email,
+        hasShareSize: !!shareSize,
+        parsedBody: body,
+        rawReqBody: req.body,
+      });
+      return res.status(400).json({
+        error: `Missing required reservation fields. Received: name=${Boolean(name)}, email=${Boolean(email)}, shareSize=${Boolean(shareSize)}.`
+      });
     }
 
     const reservationId = 'RES-' + Math.random().toString(36).substring(2, 9).toUpperCase();
