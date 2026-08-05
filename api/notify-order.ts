@@ -122,7 +122,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         <hr style="border-color: #27272a; margin: 30px 0 15px 0;" />
         <p style="text-align: center; font-size: 11px; color: #71717a; margin: 0;">
           Bastanzi Premium Beef Co. • Pasture Raised • 21-Day Dry Aged • USDA Inspected<br />
-          Questions? Call us at (800) 555-BEEF or reply directly to this email.
+          Questions? Contact us at orders@bastanzibeef.com or info@bastanzibeef.com.
         </p>
       </div>
     `;

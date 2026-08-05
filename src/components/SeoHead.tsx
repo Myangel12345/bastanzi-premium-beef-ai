@@ -50,7 +50,6 @@ export default function SeoHead({
       '@type': 'LocalBusiness',
       name: BUSINESS_INFO.name,
       image: window.location.origin + BRAND_IMAGES.logo,
-      telephone: BUSINESS_INFO.phone,
       email: BUSINESS_INFO.email,
       address: {
         '@type': 'PostalAddress',

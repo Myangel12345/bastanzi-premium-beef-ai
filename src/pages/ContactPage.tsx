@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { Phone, Mail, MapPin, Clock, Send, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Mail, MapPin, Clock, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 import { BUSINESS_INFO, BRAND_IMAGES } from '../data/content';
 import SeoHead from '../components/SeoHead';
 
@@ -7,7 +7,6 @@ export default function ContactPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: '',
     subject: 'Beef Share Inquiry',
     message: '',
   });
@@ -44,8 +43,8 @@ export default function ContactPage() {
   return (
     <div className="bg-[#0a180f] text-[#f7f2e8] min-h-screen pb-20">
       <SeoHead
-        title="Contact Bastanzi Premium Beef Co. | Phone & Address"
-        description="Get in touch with Bastanzi Premium Beef Co. Phone: (582) 288-9348. Email: info@bastanzibeef.com. 1154 E Fillmore St, Phoenix, AZ 85006. Serving Phoenix, Scottsdale, Paradise Valley, Gilbert, Chandler, Mesa, Cave Creek, Carefree."
+        title="Contact Bastanzi Premium Beef Co. | Email & Address"
+        description="Get in touch with Bastanzi Premium Beef Co. Emails: orders@bastanzibeef.com, info@bastanzibeef.com. Address: 1154 E Fillmore St, Phoenix, AZ 85006. Serving Phoenix, Scottsdale, Paradise Valley, Gilbert, Chandler, Mesa, Cave Creek, Carefree."
       />
 
       {/* Header */}
@@ -74,19 +73,6 @@ export default function ContactPage() {
               </h2>
 
               <ul className="space-y-6 text-sm">
-                <li className="flex items-start gap-4">
-                  <div className="p-3 bg-emerald-950 border border-amber-500/30 rounded-xl text-amber-400 shrink-0">
-                    <Phone className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-xs text-stone-400 uppercase tracking-wider block font-mono">Concierge Phone</span>
-                    <a href={`tel:${BUSINESS_INFO.phone}`} className="font-serif text-lg text-amber-100 font-bold hover:text-amber-300">
-                      {BUSINESS_INFO.phoneFormatted}
-                    </a>
-                    <span className="text-[11px] text-stone-400 block mt-0.5 font-light">Call or text our concierge line</span>
-                  </div>
-                </li>
-
                 <li className="flex items-start gap-4">
                   <div className="p-3 bg-emerald-950 border border-amber-500/30 rounded-xl text-amber-400 shrink-0">
                     <Mail className="w-5 h-5" />
@@ -185,7 +171,7 @@ export default function ContactPage() {
                   Thank you, <strong>{formData.name}</strong>. Your inquiry has been dispatched to our concierge team. We will contact you at <strong>{formData.email}</strong> shortly.
                 </p>
                 <button
-                  onClick={() => { setSubmitted(false); setFormData({ name: '', email: '', phone: '', subject: 'Beef Share Inquiry', message: '' }); }}
+                  onClick={() => { setSubmitted(false); setFormData({ name: '', email: '', subject: 'Beef Share Inquiry', message: '' }); }}
                   className="px-6 py-2.5 bg-[#12241a] hover:bg-[#182e21] text-amber-200 text-xs font-serif rounded-lg border border-emerald-800/60"
                 >
                   Send Another Message

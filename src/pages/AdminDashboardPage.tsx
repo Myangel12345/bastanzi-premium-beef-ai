@@ -18,12 +18,13 @@ import {
   LogOut,
   RefreshCw,
   Mail,
-  Phone,
   FileText,
   AlertCircle,
   TrendingUp,
   UserCheck,
   Calendar,
+  Layers,
+  Power,
 } from 'lucide-react';
 import {
   fetchAllOrdersForAdmin,
@@ -37,8 +38,12 @@ import {
 import { Order, OrderStatus, FulfillmentMethod, PaymentStatus } from '../types';
 import PrintOrderModal from '../components/PrintOrderModal';
 import { BRAND_IMAGES } from '../data/content';
+import { getHarvestBatches, saveHarvestBatches, HarvestBatch } from '../lib/harvestBatches';
 
 export default function AdminDashboardPage() {
+  // Navigation tab
+  const [activeTab, setActiveTab] = useState<'orders' | 'batches'>('orders');
+
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loginEmail, setLoginEmail] = useState('');
@@ -51,6 +56,11 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('All');
+
+  // Harvest Batches state
+  const [harvestBatches, setHarvestBatches] = useState<HarvestBatch[]>([]);
+  const [newBatchName, setNewBatchName] = useState('');
+  const [newBatchDelivery, setNewBatchDelivery] = useState('');
 
   // Modal states
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -72,10 +82,9 @@ export default function AdminDashboardPage() {
     first_name: '',
     last_name: '',
     email: '',
-    phone: '',
     address: '',
     city: '',
-    state: 'TX',
+    state: 'AZ',
     zip_code: '',
     beef_share: 'Full Beef Share (400-450 lbs)',
     estimated_weight: '425 lbs',
@@ -90,8 +99,9 @@ export default function AdminDashboardPage() {
 
   const [notificationBanner, setNotificationBanner] = useState('');
 
-  // Check existing admin session
+  // Check existing admin session & load batches
   useEffect(() => {
+    setHarvestBatches(getHarvestBatches());
     const session = localStorage.getItem('bastanzi_admin_auth');
     if (session === 'true') {
       setIsAuthenticated(true);
@@ -109,6 +119,42 @@ export default function AdminDashboardPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Harvest Batches Handlers
+  const handleAddBatch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newBatchName.trim()) return;
+    const newBatch: HarvestBatch = {
+      id: 'batch-' + Date.now(),
+      name: newBatchName.trim(),
+      active: true,
+      estimatedDelivery: newBatchDelivery.trim() || undefined,
+    };
+    const updated = [...harvestBatches, newBatch];
+    setHarvestBatches(updated);
+    saveHarvestBatches(updated);
+    setNewBatchName('');
+    setNewBatchDelivery('');
+    showBanner(`✨ Harvest batch "${newBatch.name}" added and activated.`);
+  };
+
+  const handleToggleBatchActive = (id: string) => {
+    const updated = harvestBatches.map((b) => (b.id === id ? { ...b, active: !b.active } : b));
+    setHarvestBatches(updated);
+    saveHarvestBatches(updated);
+    showBanner('Harvest batch active status updated.');
+  };
+
+  const handleDeleteBatch = (id: string) => {
+    if (harvestBatches.length <= 1) {
+      alert('At least one harvest batch must remain active.');
+      return;
+    }
+    const updated = harvestBatches.filter((b) => b.id !== id);
+    setHarvestBatches(updated);
+    saveHarvestBatches(updated);
+    showBanner('Harvest batch removed.');
   };
 
   // Handle Login
@@ -457,7 +503,7 @@ export default function AdminDashboardPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="font-serif text-2xl font-bold text-amber-100 uppercase tracking-wide">
-                  Order Management Dashboard
+                  Admin Control Portal
                 </h1>
                 <span className="px-2.5 py-0.5 rounded-full bg-emerald-950 border border-emerald-700 text-emerald-300 text-[10px] font-mono uppercase">
                   Live Admin Mode
@@ -484,10 +530,9 @@ export default function AdminDashboardPage() {
                   first_name: '',
                   last_name: '',
                   email: '',
-                  phone: '',
                   address: '',
                   city: '',
-                  state: 'TX',
+                  state: 'AZ',
                   zip_code: '',
                   beef_share: 'Full Beef Share (400-450 lbs)',
                   estimated_weight: '425 lbs',
@@ -516,6 +561,132 @@ export default function AdminDashboardPage() {
             </button>
           </div>
         </div>
+
+        {/* Primary View Navigation Tabs */}
+        <div className="flex items-center gap-3 border-b border-emerald-900/80 pb-2">
+          <button
+            onClick={() => setActiveTab('orders')}
+            className={`px-5 py-2.5 rounded-xl font-serif text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+              activeTab === 'orders'
+                ? 'bg-amber-400 text-emerald-950 shadow-lg'
+                : 'bg-[#0f2217] text-stone-300 hover:bg-[#152e20] border border-emerald-800/40'
+            }`}
+          >
+            <Package className="w-4 h-4" />
+            <span>Order Management & Pipeline</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('batches')}
+            className={`px-5 py-2.5 rounded-xl font-serif text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+              activeTab === 'batches'
+                ? 'bg-amber-400 text-emerald-950 shadow-lg'
+                : 'bg-[#0f2217] text-stone-300 hover:bg-[#152e20] border border-emerald-800/40'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>Harvest Batches Configuration ({harvestBatches.filter((b) => b.active).length} Active)</span>
+          </button>
+        </div>
+
+        {activeTab === 'batches' ? (
+          /* Harvest Batches Management Section */
+          <div className="space-y-6">
+            <div className="bg-[#0f2217] p-6 rounded-2xl border border-emerald-800/60 shadow-xl space-y-4">
+              <div className="flex items-center justify-between border-b border-emerald-900/80 pb-4">
+                <div>
+                  <h2 className="font-serif text-xl font-bold text-amber-100 flex items-center gap-2">
+                    <Layers className="w-5 h-5 text-amber-400" />
+                    <span>Dynamic Harvest Batches</span>
+                  </h2>
+                  <p className="text-stone-400 text-xs font-light mt-1">
+                    Manage the available delivery harvest batches displayed in the customer reservation form. Deactivated batches are instantly hidden from customers without modifying code.
+                  </p>
+                </div>
+              </div>
+
+              {/* Add New Batch Form */}
+              <form onSubmit={handleAddBatch} className="bg-[#07110a] p-4 rounded-xl border border-emerald-800/80 space-y-3">
+                <h3 className="font-serif text-sm font-bold text-amber-200">Add New Harvest Batch</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-stone-400 block mb-1">Batch Display Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Spring 2027 Harvest (March–April)"
+                      value={newBatchName}
+                      onChange={(e) => setNewBatchName(e.target.value)}
+                      className="w-full bg-[#0f2217] border border-emerald-800 rounded-lg px-3 py-2 text-xs text-stone-100 focus:outline-none focus:border-amber-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-stone-400 block mb-1">Estimated Delivery Window (Optional)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. March 15 - April 10, 2027"
+                      value={newBatchDelivery}
+                      onChange={(e) => setNewBatchDelivery(e.target.value)}
+                      className="w-full bg-[#0f2217] border border-emerald-800 rounded-lg px-3 py-2 text-xs text-stone-100 focus:outline-none focus:border-amber-400"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-emerald-950 font-serif font-bold text-xs uppercase tracking-wider rounded-lg shadow flex items-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Create & Activate Batch</span>
+                </button>
+              </form>
+
+              {/* Batches Table */}
+              <div className="overflow-x-auto rounded-xl border border-emerald-900/80">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-[#07110a] font-serif uppercase text-amber-200 border-b border-emerald-800">
+                      <th className="p-3.5">Status</th>
+                      <th className="p-3.5">Batch Name</th>
+                      <th className="p-3.5">Target Delivery Window</th>
+                      <th className="p-3.5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-emerald-900/60 bg-[#0f2217]">
+                    {harvestBatches.map((b) => (
+                      <tr key={b.id} className="hover:bg-emerald-950/40 transition-colors">
+                        <td className="p-3.5">
+                          <button
+                            onClick={() => handleToggleBatchActive(b.id)}
+                            className={`px-3 py-1 rounded-full text-[11px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 cursor-pointer transition-all ${
+                              b.active
+                                ? 'bg-emerald-950 text-emerald-300 border border-emerald-600'
+                                : 'bg-stone-900 text-stone-500 border border-stone-800'
+                            }`}
+                          >
+                            <Power className={`w-3 h-3 ${b.active ? 'text-emerald-400' : 'text-stone-600'}`} />
+                            <span>{b.active ? 'Active (Visible)' : 'Disabled'}</span>
+                          </button>
+                        </td>
+                        <td className="p-3.5 font-bold text-amber-100 text-sm">{b.name}</td>
+                        <td className="p-3.5 text-stone-300 font-mono">{b.estimatedDelivery || 'Standard Season Window'}</td>
+                        <td className="p-3.5 text-right">
+                          <button
+                            onClick={() => handleDeleteBatch(b.id)}
+                            className="p-1.5 bg-red-950/60 hover:bg-red-900 text-red-300 rounded-lg border border-red-800 transition-colors cursor-pointer"
+                            title="Delete Harvest Batch"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Order Management Section */
+          <>
 
         {/* Dashboard Metric Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -650,11 +821,6 @@ export default function AdminDashboardPage() {
                           <p className="text-xs text-stone-400 flex items-center gap-1">
                             <Mail className="w-3 h-3 text-stone-500" /> {ord.customer?.email}
                           </p>
-                          {ord.customer?.phone && (
-                            <p className="text-xs text-stone-500 flex items-center gap-1">
-                              <Phone className="w-3 h-3 text-stone-500" /> {ord.customer.phone}
-                            </p>
-                          )}
                         </div>
                       </td>
 
@@ -748,6 +914,8 @@ export default function AdminDashboardPage() {
             </table>
           </div>
         </div>
+      </>
+      )}
       </div>
 
       {/* ------------------------------------------------------------- */}
@@ -802,30 +970,17 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-serif uppercase tracking-wider text-amber-200 mb-1">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={orderForm.email}
-                    onChange={(e) => setOrderForm({ ...orderForm, email: e.target.value })}
-                    className="w-full bg-[#07110a] border border-emerald-800 rounded-xl px-3 py-2 text-sm text-stone-100"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-serif uppercase tracking-wider text-amber-200 mb-1">
-                    Phone Number
-                  </label>
-                  <input
-                    type="text"
-                    value={orderForm.phone}
-                    onChange={(e) => setOrderForm({ ...orderForm, phone: e.target.value })}
-                    className="w-full bg-[#07110a] border border-emerald-800 rounded-xl px-3 py-2 text-sm text-stone-100"
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-serif uppercase tracking-wider text-amber-200 mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={orderForm.email}
+                  onChange={(e) => setOrderForm({ ...orderForm, email: e.target.value })}
+                  className="w-full bg-[#07110a] border border-emerald-800 rounded-xl px-3 py-2 text-sm text-stone-100"
+                />
               </div>
 
               <div className="grid grid-cols-3 gap-2">

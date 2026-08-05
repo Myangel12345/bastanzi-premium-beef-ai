@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FAQ_ITEMS, BUSINESS_INFO } from '../data/content';
-import { Search, ChevronDown, ChevronUp, HelpCircle, Phone, Mail } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, HelpCircle, Mail } from 'lucide-react';
 import SeoHead from '../components/SeoHead';
 
 interface FaqPageProps {
@@ -129,9 +129,9 @@ export default function FaqPage({ setActiveTab }: FaqPageProps) {
             Our concierge team is standing by to assist with your order details.
           </p>
           <div className="pt-2 flex flex-wrap justify-center gap-4 text-xs font-serif">
-            <a href={`tel:${BUSINESS_INFO.phone}`} className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-emerald-950 font-bold rounded-lg flex items-center gap-1.5 shadow">
-              <Phone className="w-3.5 h-3.5" />
-              <span>Call {BUSINESS_INFO.phoneFormatted}</span>
+            <a href={`mailto:${BUSINESS_INFO.ordersEmail}`} className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-emerald-950 font-bold rounded-lg flex items-center gap-1.5 shadow">
+              <Mail className="w-3.5 h-3.5" />
+              <span>Email {BUSINESS_INFO.ordersEmail}</span>
             </a>
             <button
               onClick={() => setActiveTab('contact')}

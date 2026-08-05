@@ -118,15 +118,6 @@ export default function Footer({
             </h4>
             <ul className="space-y-3 text-sm">
               <li className="flex items-start gap-2.5">
-                <Phone className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                <div>
-                  <span className="text-xs text-zinc-500 block uppercase tracking-wider">Phone</span>
-                  <a href={`tel:${BUSINESS_INFO.phone}`} className="hover:text-amber-300 font-mono">
-                    {BUSINESS_INFO.phoneFormatted}
-                  </a>
-                </div>
-              </li>
-              <li className="flex items-start gap-2.5">
                 <Mail className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                 <div>
                   <span className="text-xs text-zinc-500 block uppercase tracking-wider">General Inquiries</span>

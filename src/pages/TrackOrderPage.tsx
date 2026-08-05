@@ -1,4 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
+import { BUSINESS_INFO } from '../data/content';
 import {
   Search,
   CheckCircle2,
@@ -457,10 +458,10 @@ export default function TrackOrderPage({ onNavigateToReservation }: TrackOrderPa
               </p>
               <div className="pt-2 flex justify-center gap-4">
                 <a
-                  href="tel:18005552333"
+                  href={`mailto:${BUSINESS_INFO.ordersEmail}`}
                   className="px-5 py-2 rounded-full bg-emerald-950 hover:bg-emerald-900 text-amber-300 text-xs font-serif uppercase tracking-wider border border-emerald-800 transition-colors"
                 >
-                  Call Ranch Concierge
+                  Email Ranch Concierge
                 </a>
                 {onNavigateToReservation && (
                   <button

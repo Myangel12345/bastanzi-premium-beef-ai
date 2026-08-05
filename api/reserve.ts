@@ -104,7 +104,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               <h2 style="color: #ffffff;">Reservation Summary #${reservationId}</h2>
               <p><strong>Customer:</strong> ${name}</p>
               <p><strong>Email:</strong> ${email}</p>
-              <p><strong>Phone:</strong> ${phone}</p>
               <p><strong>Address:</strong> ${address || ''}, ${city || ''}, ${state || ''} ${zip || ''}</p>
               <p><strong>Selected Share Size:</strong> <span style="color: #d4af37; font-weight: bold;">${shareSize} Beef Share</span></p>
               <p><strong>Finishing Preference:</strong> ${finish || 'Standard'}</p>
@@ -112,7 +111,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               <p><strong>Special Butcher Notes:</strong> ${notes || 'None specified'}</p>
               
               <div style="background-color: #18181b; padding: 20px; border-left: 4px solid #d4af37; margin-top: 25px;">
-                <p style="margin: 0; color: #d4af37; font-size: 14px;"><strong>Next Steps:</strong> Our ranch concierge will review your reservation and contact you via phone within 24 hours to confirm custom cutting instructions and deposit placement.</p>
+                <p style="margin: 0; color: #d4af37; font-size: 14px;"><strong>Next Steps:</strong> Our ranch concierge will review your reservation and contact you via email at ${email} within 24 hours to confirm custom cutting instructions and deposit placement.</p>
               </div>
             </div>
           `,

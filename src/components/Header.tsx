@@ -44,15 +44,14 @@ export default function Header({
           <span>USDA Inspected & 21-Day Dry Aged</span>
         </div>
         <div className="mx-auto sm:mx-0 font-medium tracking-widest text-[11px] sm:text-xs text-amber-100">
-          ✨ ACCEPTING FALL 2026 HERD RESERVATIONS • LIMITED QUANTITIES
+          ✨ ACCEPTING UPCOMING HARVEST BATCH RESERVATIONS • LIMITED QUANTITIES
         </div>
         <div className="hidden md:flex items-center gap-4 text-xs font-sans">
           <a
-            href={`tel:${BUSINESS_INFO.phone}`}
+            href={`mailto:${BUSINESS_INFO.ordersEmail}`}
             className="flex items-center gap-1 hover:text-amber-300 transition-colors text-amber-200"
           >
-            <Phone className="w-3 h-3 text-amber-400" />
-            <span>{BUSINESS_INFO.phoneFormatted}</span>
+            <span>{BUSINESS_INFO.ordersEmail}</span>
           </a>
         </div>
       </div>

@@ -27,7 +27,7 @@ export interface ShareTier {
 export interface ReservationPayload {
   name: string;
   email: string;
-  phone: string;
+  phone?: string;
   address: string;
   city: string;
   state: string;

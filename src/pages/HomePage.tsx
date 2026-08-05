@@ -396,10 +396,10 @@ export default function HomePage({ setActiveTab, onSelectShare }: HomePageProps)
               <ArrowRight className="w-4 h-4" />
             </button>
             <a
-              href={`tel:${BUSINESS_INFO.phone}`}
+              href={`mailto:${BUSINESS_INFO.ordersEmail}`}
               className="px-8 py-4 bg-[#12241a] text-amber-200 border border-amber-500/30 font-serif font-semibold text-sm uppercase tracking-widest rounded-full hover:bg-[#182e21] transition-colors"
             >
-              Call Ranch Concierge: {BUSINESS_INFO.phoneFormatted}
+              Email Ranch Concierge: {BUSINESS_INFO.ordersEmail}
             </a>
           </div>
         </div>

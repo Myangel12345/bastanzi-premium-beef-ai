@@ -3,8 +3,6 @@ import { ShareTier, GalleryItem, FAQItem, ReviewItem } from '../types';
 export const BUSINESS_INFO = {
   name: 'Bastanzi Premium Beef Co.',
   tagline: 'Artisan Ranch-Raised Beef Direct From Pastures',
-  phone: '582-288-9348',
-  phoneFormatted: '(582) 288-9348',
   email: 'info@bastanzibeef.com',
   ordersEmail: 'orders@bastanzibeef.com',
   address: '1154 E Fillmore St',

@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Printer, ShieldCheck, CheckCircle, MapPin, Phone, Mail, Building2 } from 'lucide-react';
+import { X, Printer, ShieldCheck, CheckCircle, MapPin, Mail, Building2 } from 'lucide-react';
 import { Order } from '../types';
 import { BRAND_IMAGES, BUSINESS_INFO } from '../data/content';
 
@@ -59,7 +59,7 @@ export default function PrintOrderModal({ isOpen, onClose, order }: PrintOrderMo
                   Pasture Raised • 21-Day Dry Aged • USDA Inspected
                 </p>
                 <p className="text-xs text-stone-500 mt-1">
-                  100 Ranch Road, Suite 400 • Austin, TX 78701 • Tel: {BUSINESS_INFO.phoneFormatted}
+                  100 Ranch Road, Suite 400 • Austin, TX 78701 • Email: {BUSINESS_INFO.ordersEmail}
                 </p>
               </div>
             </div>
@@ -90,9 +90,6 @@ export default function PrintOrderModal({ isOpen, onClose, order }: PrintOrderMo
               </p>
               <p className="text-stone-700 flex items-center gap-1">
                 <Mail className="w-3.5 h-3.5 text-stone-400" /> {order.customer?.email}
-              </p>
-              <p className="text-stone-700 flex items-center gap-1">
-                <Phone className="w-3.5 h-3.5 text-stone-400" /> {order.customer?.phone || 'N/A'}
               </p>
             </div>
 

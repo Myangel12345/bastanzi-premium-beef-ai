@@ -1,9 +1,10 @@
 import { useState, useEffect, FormEvent } from 'react';
 import confetti from 'canvas-confetti';
-import { BEEF_SHARE_TIERS, BUSINESS_INFO, BRAND_IMAGES } from '../data/content';
+import { BEEF_SHARE_TIERS, BRAND_IMAGES } from '../data/content';
 import { ShareSize, FinishOption, ReservationPayload } from '../types';
 import { saveReservationToDatabase } from '../lib/supabase';
-import { Check, ShieldCheck, ArrowRight, ArrowLeft, Package, Calendar, Sparkles, CheckCircle2, Printer, AlertCircle } from 'lucide-react';
+import { getActiveHarvestBatches } from '../lib/harvestBatches';
+import { Check, ShieldCheck, ArrowRight, ArrowLeft, CheckCircle2, Printer, AlertCircle, Home, Truck, Sparkles } from 'lucide-react';
 import SeoHead from '../components/SeoHead';
 
 interface ReservationPageProps {
@@ -14,18 +15,18 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
   const [step, setStep] = useState<number>(1);
   const [shareSize, setShareSize] = useState<ShareSize>(initialShareSize || 'Half');
   const [finish, setFinish] = useState<FinishOption>('Grain-finished');
+  const activeBatches = getActiveHarvestBatches();
 
   const [formData, setFormData] = useState<ReservationPayload>({
     name: '',
     email: '',
-    phone: '',
     address: '',
     city: '',
-    state: 'MT',
+    state: 'AZ',
     zip: '',
     shareSize: initialShareSize || 'Half',
     finish: 'Grain-finished',
-    preferredDeliveryDate: 'Fall 2026 Batch (Sept - Oct)',
+    preferredDeliveryDate: activeBatches[0]?.name || 'Late Fall 2026 Harvest (October–November)',
     notes: '',
   });
 
@@ -51,7 +52,7 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
         colors: ['#d4af37', '#fef08a', '#ffffff', '#b8962e'],
       });
     } catch {
-      // fallback if canvas canvas fails
+      // fallback if canvas fails
     }
   };
 
@@ -78,10 +79,9 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
     const payload: ReservationPayload = {
       name: formData.name.trim(),
       email: formData.email.trim(),
-      phone: formData.phone ? formData.phone.trim() : '',
       address: formData.address ? formData.address.trim() : '',
       city: formData.city ? formData.city.trim() : '',
-      state: formData.state ? formData.state.trim() : 'MT',
+      state: formData.state ? formData.state.trim() : 'AZ',
       zip: formData.zip ? formData.zip.trim() : '',
       shareSize: shareSize || formData.shareSize,
       finish: finish || formData.finish,
@@ -123,6 +123,24 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
 
       setReservationConfirmed(record);
       triggerConfetti();
+
+      // Reset form state after successful submission
+      const freshBatches = getActiveHarvestBatches();
+      setFormData({
+        name: '',
+        email: '',
+        address: '',
+        city: '',
+        state: 'AZ',
+        zip: '',
+        shareSize: 'Half',
+        finish: 'Grain-finished',
+        preferredDeliveryDate: freshBatches[0]?.name || 'Late Fall 2026 Harvest (October–November)',
+        notes: '',
+      });
+      setShareSize('Half');
+      setFinish('Grain-finished');
+      setStep(1);
     } catch (err: any) {
       console.error('Reservation submission exception:', err);
       setErrorMsg(err?.message || 'Failed to submit reservation. Please check network connection.');
@@ -148,50 +166,44 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
             Reserve Your Beef Share
           </h1>
           <p className="text-stone-300 text-sm sm:text-base max-w-2xl mx-auto font-light">
-            Place your refundable deposit to hold your pasture-raised animal allocation for the Fall 2026 dry-aging batch.
+            Place your refundable deposit to hold your pasture-raised animal allocation for an upcoming dry-aging harvest batch.
           </p>
         </div>
       </section>
 
       <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {reservationConfirmed ? (
-          /* Confirmation Receipt View */
+          /* Order Confirmation View */
           <div className="bg-[#102218] border-2 border-amber-500/50 rounded-2xl p-6 sm:p-10 shadow-2xl space-y-8 animate-in zoom-in-95 duration-300">
             <div className="text-center space-y-3 border-b border-emerald-900/60 pb-6">
-              <div className="w-16 h-16 rounded-full bg-emerald-950 border border-amber-400 flex items-center justify-center mx-auto text-amber-400 shadow-lg shadow-amber-500/20">
+              <div className="w-16 h-16 rounded-full bg-emerald-950 border-2 border-amber-400 flex items-center justify-center mx-auto text-amber-400 shadow-lg shadow-amber-500/20">
                 <CheckCircle2 className="w-10 h-10" />
               </div>
-              <h2 className="font-serif text-3xl font-bold text-amber-100">Reservation Confirmed!</h2>
-              <p className="text-xs text-amber-400 font-mono tracking-widest uppercase">
-                Order Number: <span className="font-bold text-base text-amber-300">#{reservationConfirmed.id}</span>
+              <h2 className="font-serif text-3xl sm:text-4xl font-bold text-amber-100">
+                ✅ Reservation Successfully Received
+              </h2>
+              <p className="text-stone-300 text-sm max-w-lg mx-auto font-light">
+                Thank you, <strong className="text-amber-200">{reservationConfirmed.name}</strong>. Your beef share reservation has been securely logged with our master butchering team.
               </p>
-              <p className="text-stone-300 text-xs sm:text-sm max-w-lg mx-auto font-light">
-                Thank you, <strong>{reservationConfirmed.name}</strong>. A confirmation email and butcher consultation itinerary have been sent to <strong>{reservationConfirmed.email}</strong>.
-              </p>
-              <div className="pt-2">
-                <a
-                  href={`#track-order?num=${reservationConfirmed.id}&email=${encodeURIComponent(reservationConfirmed.email)}`}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-amber-400 hover:bg-amber-300 text-black font-serif font-bold text-xs uppercase tracking-wider transition-all shadow-lg"
-                >
-                  <span>Track Order Real-Time (# {reservationConfirmed.id})</span>
-                  <ArrowRight className="w-4 h-4" />
-                </a>
+              <div className="inline-block bg-[#0c1a12] border border-amber-500/40 px-4 py-2 rounded-xl text-xs font-mono">
+                <span className="text-stone-400">Order Number:</span>{' '}
+                <span className="font-bold text-base text-amber-300">#{reservationConfirmed.id}</span>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs font-light">
               <div className="bg-[#0c1a12] p-5 rounded-xl border border-emerald-800/60 space-y-3">
                 <h3 className="font-serif text-sm font-bold text-amber-300 border-b border-emerald-900/60 pb-2 uppercase tracking-wider">
-                  Selected Beef Share Specs
+                  Reserved Share Details
                 </h3>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-stone-400">Share Tier:</span>
-                    <span className="font-bold text-amber-200">{reservationConfirmed.shareSize} Share</span>
+                    <span className="text-stone-400">Customer Name:</span>
+                    <span className="font-bold text-stone-100">{reservationConfirmed.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-stone-400">Finishing Option:</span>
-                    <span className="text-white font-medium">{reservationConfirmed.finish}</span>
+                    <span className="text-stone-400">Beef Share Reserved:</span>
+                    <span className="font-bold text-amber-200">{reservationConfirmed.shareSize} Share ({reservationConfirmed.finish})</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-stone-400">Estimated Total:</span>
@@ -201,54 +213,58 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
                     <span className="text-stone-400">Refundable Deposit:</span>
                     <span className="text-emerald-400 font-mono font-bold">${reservationConfirmed.depositRequired}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-stone-400">Delivery Window:</span>
-                    <span className="text-stone-300">{reservationConfirmed.preferredDeliveryDate}</span>
-                  </div>
                 </div>
               </div>
 
               <div className="bg-[#0c1a12] p-5 rounded-xl border border-emerald-800/60 space-y-3">
                 <h3 className="font-serif text-sm font-bold text-amber-300 border-b border-emerald-900/60 pb-2 uppercase tracking-wider">
-                  Customer & Delivery Details
+                  Fulfillment & Batch Allocation
                 </h3>
-                <div className="space-y-1.5 text-stone-300">
-                  <p><strong>Phone:</strong> {reservationConfirmed.phone}</p>
-                  <p><strong>Address:</strong> {reservationConfirmed.address}</p>
-                  <p><strong>Location:</strong> {reservationConfirmed.city}, {reservationConfirmed.state} {reservationConfirmed.zip}</p>
-                  <p className="pt-2 text-stone-400 italic">
-                    <strong>Special Notes:</strong> {reservationConfirmed.notes || 'No custom notes provided.'}
-                  </p>
+                <div className="space-y-2 text-stone-300">
+                  <div className="flex justify-between">
+                    <span className="text-stone-400">Delivery/Pickup Method:</span>
+                    <span className="text-white font-medium">Insulated Direct Delivery / Ranch Pickup</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-stone-400">Estimated Harvest Batch:</span>
+                    <span className="text-amber-300 font-medium">{reservationConfirmed.preferredDeliveryDate}</span>
+                  </div>
+                  <div>
+                    <span className="text-stone-400 block mb-0.5">Destination Address:</span>
+                    <span className="text-stone-200">{reservationConfirmed.address}, {reservationConfirmed.city}, {reservationConfirmed.state} {reservationConfirmed.zip}</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Next Steps Box */}
-            <div className="p-4 bg-[#0c1a12] border border-amber-500/30 rounded-xl flex items-start gap-3 text-xs text-amber-200">
+            {/* Email Confirmation Callout */}
+            <div className="p-4 bg-[#0c1a12] border border-emerald-500/40 rounded-xl flex items-start gap-3 text-xs text-stone-200">
               <ShieldCheck className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-              <div className="font-light">
-                <strong className="block font-serif text-amber-300 mb-0.5 font-bold">What Happens Next?</strong>
-                Our master butcher concierge will call you at {reservationConfirmed.phone} within 24 hours to review custom cut preferences (steak thickness, roast weights, burger lean ratio) and finalize your deposit.
+              <div className="font-light space-y-1">
+                <strong className="block font-serif text-amber-300 text-sm font-bold">Confirmation Email Dispatched</strong>
+                <p className="text-stone-300">
+                  A detailed reservation summary and butcher consultation itinerary have been sent to <strong className="text-amber-200">{reservationConfirmed.email}</strong>. Our ranch concierge will reach out via email to finalize custom cut options.
+                </p>
               </div>
             </div>
 
+            {/* Two Action Buttons: Track My Order & Return to Home */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 border-t border-emerald-900/60">
-              <button
-                onClick={() => window.print()}
-                className="w-full sm:w-auto px-6 py-2.5 bg-[#12241a] hover:bg-[#182e21] text-amber-200 font-serif text-xs rounded-lg flex items-center justify-center gap-2 border border-emerald-800/60"
+              <a
+                href={`#track-order?num=${reservationConfirmed.id}&email=${encodeURIComponent(reservationConfirmed.email)}`}
+                className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-emerald-950 font-serif font-bold text-xs uppercase tracking-wider transition-all shadow-xl flex items-center justify-center gap-2"
               >
-                <Printer className="w-4 h-4" />
-                <span>Print Order Receipt</span>
-              </button>
-              <button
-                onClick={() => {
-                  setReservationConfirmed(null);
-                  setStep(1);
-                }}
-                className="w-full sm:w-auto px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-emerald-950 font-serif font-bold text-xs uppercase tracking-widest rounded-lg"
+                <Truck className="w-4 h-4" />
+                <span>Track My Order</span>
+              </a>
+              <a
+                href="#home"
+                onClick={() => setReservationConfirmed(null)}
+                className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#12241a] hover:bg-[#182e21] text-amber-200 font-serif font-bold text-xs uppercase tracking-wider transition-all border border-emerald-800/60 flex items-center justify-center gap-2"
               >
-                Place Another Reservation
-              </button>
+                <Home className="w-4 h-4" />
+                <span>Return to Home</span>
+              </a>
             </div>
           </div>
         ) : (
@@ -420,15 +436,17 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
                 </div>
 
                 <div>
-                  <label className="text-stone-300 font-serif block mb-1">Preferred Delivery Batch</label>
+                  <label className="text-stone-300 font-serif block mb-1">Preferred Harvest Batch *</label>
                   <select
                     value={formData.preferredDeliveryDate}
                     onChange={(e) => setFormData({ ...formData, preferredDeliveryDate: e.target.value })}
                     className="w-full bg-[#0c1a12] border border-emerald-800/60 focus:border-amber-400 rounded-lg px-3.5 py-2.5 text-white focus:outline-none font-light"
                   >
-                    <option value="Fall 2026 Batch (Sept - Oct)">Fall 2026 Batch (Sept - Oct)</option>
-                    <option value="Late Fall 2026 Batch (Nov - Dec)">Late Fall 2026 Batch (Nov - Dec)</option>
-                    <option value="Winter 2027 Batch (Jan - Feb)">Winter 2027 Batch (Jan - Feb)</option>
+                    {activeBatches.map((batch) => (
+                      <option key={batch.id} value={batch.name}>
+                        {batch.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -519,7 +537,7 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
                       <p><strong>Customer:</strong> {formData.name}</p>
                       <p><strong>Contact Email:</strong> {formData.email}</p>
                       <p><strong>Address:</strong> {formData.address}, {formData.city}, {formData.state} {formData.zip}</p>
-                      <p><strong>Target Window:</strong> {formData.preferredDeliveryDate}</p>
+                      <p><strong>Harvest Batch:</strong> {formData.preferredDeliveryDate}</p>
                     </div>
                   </div>
                 </div>
@@ -576,3 +594,4 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
     </div>
   );
 }
+
