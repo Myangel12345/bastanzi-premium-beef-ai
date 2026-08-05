@@ -148,7 +148,7 @@ export default function HomePage({ setActiveTab, onSelectShare }: HomePageProps)
                   <img
                     src={BRAND_IMAGES.logo}
                     alt="Logo"
-                    className="w-10 h-10 rounded-full"
+                    className="w-10 h-10 rounded-full object-cover shrink-0"
                     referrerPolicy="no-referrer"
                   />
                   <div>
@@ -375,7 +375,7 @@ export default function HomePage({ setActiveTab, onSelectShare }: HomePageProps)
           <img
             src={BRAND_IMAGES.logo}
             alt="Bastanzi Crest"
-            className="w-16 h-16 rounded-full mx-auto p-0.5 bg-amber-400 shadow-xl"
+            className="w-16 h-16 rounded-full mx-auto p-0.5 bg-amber-400 shadow-xl object-cover shrink-0"
             referrerPolicy="no-referrer"
           />
 

@@ -29,7 +29,7 @@ export default function Footer({
           {/* Brand Column */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-amber-500 to-amber-200 shadow-md">
+              <div className="w-12 h-12 rounded-full p-0.5 bg-gradient-to-tr from-amber-500 to-amber-200 shadow-md shrink-0">
                 <img
                   src={BRAND_IMAGES.logo}
                   alt={BUSINESS_INFO.name}
@@ -81,6 +81,16 @@ export default function Footer({
               <li>
                 <button onClick={() => handleNav('shares')} className="hover:text-amber-300 transition-colors">
                   Beef Shares & Pricing
+                </button>
+              </li>
+              <li>
+                <button onClick={() => handleNav('track-order')} className="text-amber-300 font-semibold hover:underline">
+                  Track My Order
+                </button>
+              </li>
+              <li>
+                <button onClick={() => handleNav('admin')} className="text-amber-400/80 hover:text-amber-300 transition-colors text-xs uppercase tracking-widest font-mono">
+                  🔒 Admin Portal
                 </button>
               </li>
               <li>

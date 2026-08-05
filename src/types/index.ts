@@ -54,6 +54,69 @@ export interface ContactPayload {
   message: string;
 }
 
+export type OrderStatus =
+  | 'Order Received'
+  | 'Reservation Confirmed'
+  | 'Payment Confirmed'
+  | 'Preparing Beef Share'
+  | 'Quality Inspection'
+  | 'Packaged'
+  | 'Ready for Pickup'
+  | 'Out for Delivery'
+  | 'Delivered';
+
+export type FulfillmentMethod = 'Pickup' | 'Delivery';
+
+export type PaymentStatus = 'Pending' | 'Deposit Paid' | 'Paid in Full' | 'Refunded';
+
+export interface Customer {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  created_at: string;
+}
+
+export interface Order {
+  id: string;
+  order_number: string;
+  customer_id: string;
+  beef_share: string;
+  estimated_weight: string;
+  total_price: number;
+  payment_status: PaymentStatus | string;
+  fulfillment_method: FulfillmentMethod | string;
+  pickup_date: string;
+  delivery_date: string;
+  current_status: OrderStatus | string;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+  customer?: Customer;
+  history?: OrderHistory[];
+}
+
+export interface OrderHistory {
+  id: string;
+  order_id: string;
+  status: string;
+  notes: string;
+  created_at: string;
+  created_by: string;
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  role: string;
+  created_at: string;
+}
+
 export interface GalleryItem {
   id: string;
   title: string;

@@ -13,6 +13,8 @@ import GalleryPage from './pages/GalleryPage';
 import FaqPage from './pages/FaqPage';
 import ContactPage from './pages/ContactPage';
 import ReservationPage from './pages/ReservationPage';
+import TrackOrderPage from './pages/TrackOrderPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
 
 import { ShareSize } from './types';
 
@@ -28,9 +30,22 @@ export default function App() {
   // Sync hash with active tab for clean client navigation
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '');
-      if (['home', 'about', 'shares', 'gallery', 'faq', 'contact', 'reservation'].includes(hash)) {
-        setActiveTab(hash);
+      const rawHash = window.location.hash.replace('#', '');
+      const cleanHash = rawHash.split('?')[0];
+      if (
+        [
+          'home',
+          'about',
+          'shares',
+          'gallery',
+          'faq',
+          'contact',
+          'reservation',
+          'track-order',
+          'admin',
+        ].includes(cleanHash)
+      ) {
+        setActiveTab(cleanHash);
       }
     };
 
@@ -78,6 +93,10 @@ export default function App() {
         {activeTab === 'reservation' && (
           <ReservationPage initialShareSize={selectedShare} />
         )}
+        {activeTab === 'track-order' && (
+          <TrackOrderPage onNavigateToReservation={() => changeTab('reservation')} />
+        )}
+        {activeTab === 'admin' && <AdminDashboardPage />}
       </main>
 
       {/* Footer */}

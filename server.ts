@@ -9,6 +9,7 @@ import chatHandler from './api/chat.ts';
 import healthHandler from './api/health.ts';
 import sitemapHandler from './api/sitemap.ts';
 import robotsHandler from './api/robots.ts';
+import notifyOrderHandler from './api/notify-order.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,6 +24,7 @@ app.all('/api/health', (req, res) => healthHandler(req as any, res as any));
 app.all('/api/reserve', (req, res) => reserveHandler(req as any, res as any));
 app.all('/api/contact', (req, res) => contactHandler(req as any, res as any));
 app.all('/api/chat', (req, res) => chatHandler(req as any, res as any));
+app.all('/api/notify-order', (req, res) => notifyOrderHandler(req as any, res as any));
 app.all('/sitemap.xml', (req, res) => sitemapHandler(req as any, res as any));
 app.all('/robots.txt', (req, res) => robotsHandler(req as any, res as any));
 

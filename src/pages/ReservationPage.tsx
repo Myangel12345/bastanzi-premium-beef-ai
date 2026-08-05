@@ -163,11 +163,20 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
               </div>
               <h2 className="font-serif text-3xl font-bold text-amber-100">Reservation Confirmed!</h2>
               <p className="text-xs text-amber-400 font-mono tracking-widest uppercase">
-                Reservation Receipt #{reservationConfirmed.id}
+                Order Number: <span className="font-bold text-base text-amber-300">#{reservationConfirmed.id}</span>
               </p>
               <p className="text-stone-300 text-xs sm:text-sm max-w-lg mx-auto font-light">
                 Thank you, <strong>{reservationConfirmed.name}</strong>. A confirmation email and butcher consultation itinerary have been sent to <strong>{reservationConfirmed.email}</strong>.
               </p>
+              <div className="pt-2">
+                <a
+                  href={`#track-order?num=${reservationConfirmed.id}&email=${encodeURIComponent(reservationConfirmed.email)}`}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-amber-400 hover:bg-amber-300 text-black font-serif font-bold text-xs uppercase tracking-wider transition-all shadow-lg"
+                >
+                  <span>Track Order Real-Time (# {reservationConfirmed.id})</span>
+                  <ArrowRight className="w-4 h-4" />
+                </a>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs font-light">

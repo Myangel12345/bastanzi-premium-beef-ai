@@ -23,6 +23,7 @@ export default function Header({
     { id: 'home', label: 'Home' },
     { id: 'about', label: 'About Our Ranch' },
     { id: 'shares', label: 'Beef Shares' },
+    { id: 'track-order', label: 'Track My Order' },
     { id: 'gallery', label: 'Gallery' },
     { id: 'faq', label: 'FAQ' },
     { id: 'contact', label: 'Contact' },
@@ -63,7 +64,7 @@ export default function Header({
           onClick={() => handleNavClick('home')}
           className="flex items-center gap-3 group text-left focus:outline-none"
         >
-          <div className="relative w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-amber-500 via-amber-200 to-amber-600 shadow-lg shadow-emerald-950/60 group-hover:scale-105 transition-transform">
+          <div className="relative w-11 h-11 rounded-full p-0.5 bg-gradient-to-tr from-amber-500 via-amber-200 to-amber-600 shadow-lg shadow-emerald-950/60 group-hover:scale-105 transition-transform shrink-0">
             <img
               src={BRAND_IMAGES.logo}
               alt={BUSINESS_INFO.name}
