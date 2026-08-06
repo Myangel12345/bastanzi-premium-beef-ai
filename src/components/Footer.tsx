@@ -84,28 +84,18 @@ export default function Footer({
                 </button>
               </li>
               <li>
+                <button onClick={() => handleNav('reservation')} className="text-amber-400 font-semibold hover:underline">
+                  Reserve Your Share
+                </button>
+              </li>
+              <li>
                 <button onClick={() => handleNav('track-order')} className="text-amber-300 font-semibold hover:underline">
                   Track My Order
                 </button>
               </li>
               <li>
-                <button onClick={() => handleNav('admin')} className="text-amber-400/80 hover:text-amber-300 transition-colors text-xs uppercase tracking-widest font-mono">
-                  🔒 Admin Portal
-                </button>
-              </li>
-              <li>
-                <button onClick={() => handleNav('gallery')} className="hover:text-amber-300 transition-colors">
-                  Photo Gallery
-                </button>
-              </li>
-              <li>
-                <button onClick={() => handleNav('faq')} className="hover:text-amber-300 transition-colors">
-                  FAQ & Storage Guide
-                </button>
-              </li>
-              <li>
-                <button onClick={() => handleNav('reservation')} className="text-amber-400 font-semibold hover:underline">
-                  Reserve Your Share
+                <button onClick={() => handleNav('contact')} className="hover:text-amber-300 transition-colors">
+                  Contact Us
                 </button>
               </li>
             </ul>

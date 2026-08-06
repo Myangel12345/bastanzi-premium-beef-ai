@@ -189,25 +189,6 @@ export default function TrackOrderPage({ onNavigateToReservation }: TrackOrderPa
               )}
             </button>
           </form>
-
-          {/* Quick Demo Pre-fill helper */}
-          <div className="pt-2 border-t border-emerald-900/60 flex flex-wrap items-center gap-2 text-xs text-stone-400">
-            <span className="text-stone-500">Demo Order Shortcuts:</span>
-            <button
-              type="button"
-              onClick={() => handleQuickDemo('BST-2026-000001', 'arthur.pendleton@example.com')}
-              className="px-2.5 py-1 rounded bg-emerald-950 hover:bg-emerald-900 text-amber-300 font-mono text-[11px] border border-emerald-800 transition-colors"
-            >
-              BST-2026-000001 (Preparing)
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickDemo('BST-2026-000002', 'eleanor@example.com')}
-              className="px-2.5 py-1 rounded bg-emerald-950 hover:bg-emerald-900 text-amber-300 font-mono text-[11px] border border-emerald-800 transition-colors"
-            >
-              BST-2026-000002 (Ready for Pickup)
-            </button>
-          </div>
         </div>
 
         {/* Error Alert */}

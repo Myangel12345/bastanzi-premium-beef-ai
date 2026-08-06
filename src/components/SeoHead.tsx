@@ -5,15 +5,26 @@ interface SeoProps {
   title?: string;
   description?: string;
   pagePath?: string;
+  noindex?: boolean;
 }
 
 export default function SeoHead({
   title = 'Bastanzi Premium Beef Co. | Luxury Ranch Beef Shares Montana',
   description = 'Reserve premium ranch-raised dry-aged beef shares from Bastanzi Beef Co. 100% pasture-raised Full, Half, Quarter & Eighth shares delivered nationwide.',
   pagePath = '/',
+  noindex = false,
 }: SeoProps) {
   useEffect(() => {
     document.title = title;
+
+    // Update robots tag
+    let metaRobots = document.querySelector('meta[name="robots"]');
+    if (!metaRobots) {
+      metaRobots = document.createElement('meta');
+      metaRobots.setAttribute('name', 'robots');
+      document.head.appendChild(metaRobots);
+    }
+    metaRobots.setAttribute('content', noindex ? 'noindex, nofollow' : 'index, follow');
 
     // Update meta description
     let metaDesc = document.querySelector('meta[name="description"]');

@@ -27,9 +27,14 @@ export default function App() {
   const [sitemapModalOpen, setSitemapModalOpen] = useState(false);
   const [vercelModalOpen, setVercelModalOpen] = useState(false);
 
-  // Sync hash with active tab for clean client navigation
+  // Sync pathname & hash with active tab for clean client navigation
   useEffect(() => {
-    const handleHashChange = () => {
+    const handleLocationChange = () => {
+      const pathname = window.location.pathname.replace(/^\//, '');
+      if (pathname === 'admin') {
+        setActiveTab('admin');
+        return;
+      }
       const rawHash = window.location.hash.replace('#', '');
       const cleanHash = rawHash.split('?')[0];
       if (
@@ -49,9 +54,13 @@ export default function App() {
       }
     };
 
-    handleHashChange();
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    handleLocationChange();
+    window.addEventListener('hashchange', handleLocationChange);
+    window.addEventListener('popstate', handleLocationChange);
+    return () => {
+      window.removeEventListener('hashchange', handleLocationChange);
+      window.removeEventListener('popstate', handleLocationChange);
+    };
   }, []);
 
   const changeTab = (tab: string) => {

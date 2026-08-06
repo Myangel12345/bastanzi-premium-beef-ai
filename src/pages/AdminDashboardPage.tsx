@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import SeoHead from '../components/SeoHead';
 import {
   ShieldCheck,
   Search,
@@ -99,6 +100,16 @@ export default function AdminDashboardPage() {
 
   const [notificationBanner, setNotificationBanner] = useState('');
 
+  // Automatic Logout state (15 min timeout, 1 min warning)
+  const [showInactivityWarning, setShowInactivityWarning] = useState(false);
+  const [secondsRemaining, setSecondsRemaining] = useState(60);
+  const [lastActivity, setLastActivity] = useState<number>(Date.now());
+
+  const extendSession = () => {
+    setLastActivity(Date.now());
+    setShowInactivityWarning(false);
+  };
+
   // Check existing admin session & load batches
   useEffect(() => {
     setHarvestBatches(getHarvestBatches());
@@ -108,6 +119,45 @@ export default function AdminDashboardPage() {
       loadAdminOrders();
     }
   }, []);
+
+  // 15-Minute Inactivity Auto-Logout Effect
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000; // 15 mins
+    const WARNING_TIMEOUT_MS = 14 * 60 * 1000;   // 14 mins
+
+    const resetActivityTimer = () => {
+      // Only update if not currently showing warning modal to avoid flickering countdown
+      setLastActivity(Date.now());
+    };
+
+    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+    events.forEach((evt) => window.addEventListener(evt, resetActivityTimer));
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const elapsed = now - lastActivity;
+
+      if (elapsed >= INACTIVITY_TIMEOUT_MS) {
+        setIsAuthenticated(false);
+        localStorage.removeItem('bastanzi_admin_auth');
+        setShowInactivityWarning(false);
+        setAuthError('Session expired after 15 minutes of inactivity. Please log in again.');
+      } else if (elapsed >= WARNING_TIMEOUT_MS) {
+        setShowInactivityWarning(true);
+        const remaining = Math.max(0, Math.ceil((INACTIVITY_TIMEOUT_MS - elapsed) / 1000));
+        setSecondsRemaining(remaining);
+      } else {
+        setShowInactivityWarning(false);
+      }
+    }, 1000);
+
+    return () => {
+      events.forEach((evt) => window.removeEventListener(evt, resetActivityTimer));
+      clearInterval(interval);
+    };
+  }, [isAuthenticated, lastActivity]);
 
   const loadAdminOrders = async () => {
     setLoading(true);
@@ -402,6 +452,7 @@ export default function AdminDashboardPage() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#07110a] text-stone-100 flex items-center justify-center p-4">
+        <SeoHead title="Admin Portal Login | Bastanzi Beef Co." pagePath="/admin" noindex={true} />
         <div className="bg-[#0f2217] border border-amber-500/30 rounded-2xl p-8 max-w-md w-full shadow-2xl space-y-6">
           <div className="text-center space-y-2">
             <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-amber-500 to-amber-200 p-0.5 mx-auto shadow-lg">
@@ -479,6 +530,7 @@ export default function AdminDashboardPage() {
   // -------------------------------------------------------------
   return (
     <div className="min-h-screen bg-[#07110a] text-stone-100 py-8 px-4 sm:px-6 lg:px-8">
+      <SeoHead title="Admin Control Portal | Bastanzi Beef Co." pagePath="/admin" noindex={true} />
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Banner Alert Notification */}
         {notificationBanner && (
@@ -1262,6 +1314,49 @@ export default function AdminDashboardPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* Inactivity Auto-Logout Warning Modal */}
+      {/* ------------------------------------------------------------- */}
+      {showInactivityWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-[#0f2217] border-2 border-amber-500 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl text-stone-100 text-center">
+            <div className="w-14 h-14 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center mx-auto border border-amber-500/40">
+              <Clock className="w-7 h-7 animate-pulse" />
+            </div>
+            <div>
+              <h3 className="font-serif font-bold text-xl text-amber-100">
+                Inactivity Logout Warning
+              </h3>
+              <p className="text-stone-300 text-sm mt-2">
+                For security, your admin session will automatically log out in:
+              </p>
+              <div className="my-4 py-3 bg-[#07110a] rounded-xl border border-emerald-800/80">
+                <span className="font-mono text-3xl font-bold text-amber-400">
+                  {secondsRemaining}s
+                </span>
+              </div>
+              <p className="text-xs text-stone-400">
+                Click below to stay authenticated and extend your session.
+              </p>
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={handleLogout}
+                className="w-1/2 py-2.5 bg-stone-900 hover:bg-stone-800 text-stone-300 rounded-xl text-xs font-serif uppercase tracking-wider transition-colors"
+              >
+                Log Out Now
+              </button>
+              <button
+                onClick={extendSession}
+                className="w-1/2 py-2.5 bg-gradient-to-r from-amber-500 to-amber-400 text-black font-serif font-bold rounded-xl text-xs uppercase tracking-wider hover:brightness-110 transition-all shadow-md"
+              >
+                Stay Logged In
+              </button>
+            </div>
           </div>
         </div>
       )}

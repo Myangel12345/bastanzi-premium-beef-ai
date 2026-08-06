@@ -23,9 +23,8 @@ export default function Header({
     { id: 'home', label: 'Home' },
     { id: 'about', label: 'About Our Ranch' },
     { id: 'shares', label: 'Beef Shares' },
+    { id: 'reservation', label: 'Reservation' },
     { id: 'track-order', label: 'Track My Order' },
-    { id: 'gallery', label: 'Gallery' },
-    { id: 'faq', label: 'FAQ' },
     { id: 'contact', label: 'Contact' },
   ];
 

@@ -17,117 +17,8 @@ export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
 
-// Initial sample orders for fallback or demo
-const DEFAULT_DEMO_ORDERS: Order[] = [
-  {
-    id: 'ord-demo-001',
-    order_number: 'BST-2026-000001',
-    customer_id: 'cust-demo-001',
-    beef_share: 'Full Beef Share (400-450 lbs)',
-    estimated_weight: '425 lbs',
-    total_price: 4800.0,
-    payment_status: 'Deposit Paid',
-    fulfillment_method: 'Delivery',
-    pickup_date: '',
-    delivery_date: '2026-09-15',
-    current_status: 'Preparing Beef Share',
-    notes: '21-day custom dry age requested. Ribeye steaks cut 1.5 inches thick.',
-    created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
-    updated_at: new Date(Date.now() - 1 * 86400000).toISOString(),
-    customer: {
-      id: 'cust-demo-001',
-      first_name: 'Arthur',
-      last_name: 'Pendleton',
-      email: 'arthur.pendleton@example.com',
-      phone: '(555) 234-5678',
-      address: '742 Evergreen Terrace',
-      city: 'Austin',
-      state: 'TX',
-      zip_code: '78701',
-      created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
-    },
-    history: [
-      {
-        id: 'hist-001',
-        order_id: 'ord-demo-001',
-        status: 'Order Received',
-        notes: 'Deposit received. Custom cutting card queued.',
-        created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
-        created_by: 'System',
-      },
-      {
-        id: 'hist-002',
-        order_id: 'ord-demo-001',
-        status: 'Reservation Confirmed',
-        notes: 'Reservation approved by master butcher. Herd allocation set.',
-        created_at: new Date(Date.now() - 4 * 86400000).toISOString(),
-        created_by: 'admin@bastanzibeef.com',
-      },
-      {
-        id: 'hist-003',
-        order_id: 'ord-demo-001',
-        status: 'Preparing Beef Share',
-        notes: 'Entered dry-aging cooler #2. Temperature 34°F, Humidity 82%.',
-        created_at: new Date(Date.now() - 1 * 86400000).toISOString(),
-        created_by: 'admin@bastanzibeef.com',
-      },
-    ],
-  },
-  {
-    id: 'ord-demo-002',
-    order_number: 'BST-2026-000002',
-    customer_id: 'cust-demo-002',
-    beef_share: 'Half Beef Share (200-225 lbs)',
-    estimated_weight: '210 lbs',
-    total_price: 2500.0,
-    payment_status: 'Paid in Full',
-    fulfillment_method: 'Pickup',
-    pickup_date: '2026-08-20',
-    delivery_date: '',
-    current_status: 'Ready for Pickup',
-    notes: 'Vacuum sealed in heavy-duty 4mil barrier freezer bags. Boxed in insulated containers.',
-    created_at: new Date(Date.now() - 12 * 86400000).toISOString(),
-    updated_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-    customer: {
-      id: 'cust-demo-002',
-      first_name: 'Eleanor',
-      last_name: 'Vance',
-      email: 'eleanor@example.com',
-      phone: '(555) 987-6543',
-      address: '108 Hill House Way',
-      city: 'Dallas',
-      state: 'TX',
-      zip_code: '75201',
-      created_at: new Date(Date.now() - 12 * 86400000).toISOString(),
-    },
-    history: [
-      {
-        id: 'hist-004',
-        order_id: 'ord-demo-002',
-        status: 'Order Received',
-        notes: 'Order submitted online.',
-        created_at: new Date(Date.now() - 12 * 86400000).toISOString(),
-        created_by: 'System',
-      },
-      {
-        id: 'hist-005',
-        order_id: 'ord-demo-002',
-        status: 'Packaged',
-        notes: 'Flash frozen at -20°F. Insulated cartons sealed with tamper security band.',
-        created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
-        created_by: 'admin@bastanzibeef.com',
-      },
-      {
-        id: 'hist-006',
-        order_id: 'ord-demo-002',
-        status: 'Ready for Pickup',
-        notes: 'Stored in Freezer Unit A-4. Ready for customer pickup.',
-        created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-        created_by: 'admin@bastanzibeef.com',
-      },
-    ],
-  },
-];
+// Initial sample orders for fallback or demo (empty for production)
+const DEFAULT_DEMO_ORDERS: Order[] = [];
 
 // Helper to get local orders
 function getLocalOrders(): Order[] {
@@ -675,6 +566,18 @@ export async function saveReservationToDatabase(reservation: ReservationPayload)
       id: res.order.order_number,
       orderNumber: res.order.order_number,
       data: res.order,
+      name: `${res.order.customer?.first_name || ''} ${res.order.customer?.last_name || ''}`.trim() || reservation.name,
+      email: res.order.customer?.email || reservation.email,
+      shareSize: reservation.shareSize,
+      finish: reservation.finish,
+      depositRequired: reservation.shareSize === 'Quarter' ? 150 : reservation.shareSize === 'Half' ? 300 : 500,
+      preferredDeliveryDate: reservation.preferredDeliveryDate,
+      address: reservation.address,
+      city: reservation.city,
+      state: reservation.state,
+      zip: reservation.zip,
+      phone: reservation.phone,
+      notes: reservation.notes,
     };
   }
 
