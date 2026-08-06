@@ -13,8 +13,7 @@ import sitemapHandler from './api/sitemap.ts';
 import robotsHandler from './api/robots.ts';
 import notifyOrderHandler from './api/notify-order.ts';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const appDir = process.cwd();
 
 const app = express();
 const PORT = 3000;

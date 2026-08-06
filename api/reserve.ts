@@ -38,17 +38,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body = req.body;
     }
 
-    const name = body.name || body.fullName || body.customerName || '';
-    const email = body.email || body.customerEmail || '';
-    const phone = body.phone || body.phoneNumber || '';
-    const address = body.address || '';
-    const city = body.city || '';
-    const state = body.state || '';
-    const zip = body.zip || '';
-    const shareSize = body.shareSize || body.selectedShare || body.tier || '';
-    const finish = body.finish || body.finishingOption || '';
-    const preferredDeliveryDate = body.preferredDeliveryDate || body.deliveryDate || '';
-    const notes = body.notes || body.specialNotes || '';
+    const name = String(body.name || body.fullName || body.customerName || '').trim();
+    const email = String(body.email || body.customerEmail || '').trim();
+    const phone = String(body.phone || body.phoneNumber || '').trim();
+    const address = String(body.address || '').trim();
+    const city = String(body.city || '').trim();
+    const state = String(body.state || '').trim();
+    const zip = String(body.zip || '').trim();
+    const shareSize = String(body.shareSize || body.selectedShare || body.tier || '').trim();
+    const finish = String(body.finish || body.finishingOption || '').trim();
+    const preferredDeliveryDate = String(body.preferredDeliveryDate || body.deliveryDate || '').trim();
+    const notes = String(body.notes || body.specialNotes || '').trim();
 
     if (!name || !email || !shareSize) {
       console.log('Reservation validation failure:', {
@@ -64,11 +64,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Standardized Bastanzi Order Number format
-    const orderNumber = body.orderNumber || body.order_number || (`BST-2026-${Math.floor(100000 + Math.random() * 900000)}`);
+    const orderNumber = String(body.orderNumber || body.order_number || (`BST-2026-${Math.floor(100000 + Math.random() * 900000)}`)).trim();
     const reservationId = orderNumber;
     const createdAt = new Date().toISOString();
 
-    const nameParts = name.trim().split(' ');
+    const nameParts = name.split(/\s+/);
     const firstName = nameParts[0] || 'Valued';
     const lastName = nameParts.slice(1).join(' ') || 'Customer';
 
@@ -114,13 +114,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
 
     // Save to server-side memory cache
-    serverOrdersCache.unshift(fullOrderObj);
+    if (Array.isArray(serverOrdersCache)) {
+      serverOrdersCache.unshift(fullOrderObj);
+    }
 
     // Save to Supabase from server if client is available
     const supabase = getSupabaseServerClient();
     if (supabase) {
       try {
         console.log(`[SERVER /api/reserve] Writing reservation #${orderNumber} to Supabase database...`);
+        
+        let dbCustId: string | null = null;
+
+        // Try inserting customer
         const { data: custData, error: custErr } = await supabase
           .from('customers')
           .insert([
@@ -138,18 +144,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .select()
           .single();
 
-        if (custErr) {
-          console.warn('[SERVER /api/reserve] Customer insert note:', custErr.message);
+        if (custData && custData.id) {
+          dbCustId = custData.id;
+        } else {
+          if (custErr) {
+            console.warn('[SERVER /api/reserve] Customer insert note:', custErr.message);
+          }
+          // Try retrieving existing customer by email
+          const { data: existingCust } = await supabase
+            .from('customers')
+            .select('id')
+            .eq('email', email)
+            .maybeSingle();
+
+          if (existingCust && existingCust.id) {
+            dbCustId = existingCust.id;
+          }
         }
 
-        const dbCustId = custData ? custData.id : customerObj.id;
+        // Fallback to customerObj.id if no DB customer ID
+        const finalCustId = dbCustId || customerObj.id;
 
         const { data: ordData, error: ordErr } = await supabase
           .from('orders')
           .insert([
             {
               order_number: orderNumber,
-              customer_id: dbCustId,
+              customer_id: finalCustId,
               beef_share: shareSize,
               estimated_weight: 'TBD',
               total_price: 0,
@@ -201,15 +222,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
 
     // Initialize Resend if API key exists
-    const resendApiKey = process.env.RESEND_API_KEY || '';
-    const resend = resendApiKey ? new Resend(resendApiKey) : null;
-    const notificationEmail = process.env.NOTIFICATION_EMAIL || 'orders@bastanzibeef.com';
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'Bastanzi Beef Orders <orders@bastanzibeef.com>';
+    const resendApiKey = (process.env.RESEND_API_KEY || '').trim();
+    let resend: Resend | null = null;
+    if (resendApiKey) {
+      try {
+        resend = new Resend(resendApiKey);
+      } catch (e) {
+        console.warn('Failed to initialize Resend instance:', e);
+      }
+    }
+    const notificationEmail = (process.env.NOTIFICATION_EMAIL || 'orders@bastanzibeef.com').trim();
+    const fromEmail = (process.env.RESEND_FROM_EMAIL || 'Bastanzi Beef Orders <orders@bastanzibeef.com>').trim();
 
     let emailStatus = 'Not configured (Simulated Success)';
     if (resend) {
       try {
-        await resend.emails.send({
+        const { data: emailData, error: emailErr } = await resend.emails.send({
           from: fromEmail,
           to: [notificationEmail, email],
           subject: `✨ New Beef Share Reservation #${orderNumber} - Bastanzi Premium Beef Co.`,
@@ -234,10 +262,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             </div>
           `,
         });
-        emailStatus = 'Sent successfully';
+
+        if (emailErr) {
+          console.error('Resend email API error:', emailErr);
+          emailStatus = `Email note: ${emailErr.message || 'Error sending'}`;
+        } else {
+          emailStatus = 'Sent successfully';
+        }
       } catch (emailErr: any) {
-        console.error('Resend email error:', emailErr);
-        emailStatus = `Email error: ${emailErr.message || 'Failed'}`;
+        console.error('Resend email exception:', emailErr);
+        emailStatus = `Email error: ${emailErr?.message || 'Failed'}`;
       }
     }
 
@@ -253,3 +287,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'Server error processing reservation' });
   }
 }
+
