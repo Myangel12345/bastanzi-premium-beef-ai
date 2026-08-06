@@ -18,7 +18,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   console.log('Incoming reservation request body:', req.body);
 
+  let currentStage = 'init';
   try {
+    currentStage = 'parse_body';
     let body: any = {};
     if (typeof req.body === 'string') {
       try {
@@ -38,6 +40,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body = req.body;
     }
 
+    currentStage = 'validate_input';
     const name = String(body.name || body.fullName || body.customerName || '').trim();
     const email = String(body.email || body.customerEmail || '').trim();
     const phone = String(body.phone || body.phoneNumber || '').trim();
@@ -59,10 +62,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         rawReqBody: req.body,
       });
       return res.status(400).json({
-        error: `Missing required reservation fields. Received: name=${Boolean(name)}, email=${Boolean(email)}, shareSize=${Boolean(shareSize)}.`
+        success: false,
+        stage: 'validate_input',
+        message: `Missing required reservation fields. Received: name=${Boolean(name)}, email=${Boolean(email)}, shareSize=${Boolean(shareSize)}.`,
+        details: 'Name, email, and shareSize are required.'
       });
     }
 
+    currentStage = 'build_order_object';
     // Standardized Bastanzi Order Number format
     const orderNumber = String(body.orderNumber || body.order_number || (`BST-2026-${Math.floor(100000 + Math.random() * 900000)}`)).trim();
     const reservationId = orderNumber;
@@ -113,11 +120,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ],
     };
 
+    currentStage = 'save_cache';
     // Save to server-side memory cache
     if (Array.isArray(serverOrdersCache)) {
       serverOrdersCache.unshift(fullOrderObj);
     }
 
+    currentStage = 'supabase_write';
     // Save to Supabase from server if client is available
     const supabase = getSupabaseServerClient();
     if (supabase) {
@@ -221,6 +230,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       status: 'Order Received',
     };
 
+    currentStage = 'email_send';
     // Initialize Resend if API key exists
     const resendApiKey = (process.env.RESEND_API_KEY || '').trim();
     let resend: Resend | null = null;
@@ -275,6 +285,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    currentStage = 'respond';
     return res.status(200).json({
       success: true,
       reservationId,
@@ -283,8 +294,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       record: reservationRecord,
     });
   } catch (error: any) {
-    console.error('Reservation API error:', error);
-    return res.status(500).json({ error: 'Server error processing reservation' });
+    console.error(`[SERVER /api/reserve] Unhandled exception during stage [${currentStage}]:`, error, error?.stack);
+    return res.status(500).json({
+      success: false,
+      stage: currentStage,
+      message: error?.message || 'Server error processing reservation',
+      details: error?.stack || String(error),
+    });
   }
 }
 
