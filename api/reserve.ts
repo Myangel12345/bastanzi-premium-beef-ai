@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Resend } from 'resend';
+import { getSupabaseServerClient, serverOrdersCache } from './track.ts';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS Headers
@@ -67,6 +68,120 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const reservationId = orderNumber;
     const createdAt = new Date().toISOString();
 
+    const nameParts = name.trim().split(' ');
+    const firstName = nameParts[0] || 'Valued';
+    const lastName = nameParts.slice(1).join(' ') || 'Customer';
+
+    const customerObj = {
+      id: 'cust-' + Math.random().toString(36).substring(2, 9),
+      first_name: firstName,
+      last_name: lastName,
+      email: email,
+      phone: phone || 'N/A',
+      address: address || '',
+      city: city || '',
+      state: state || '',
+      zip_code: zip || '',
+      created_at: createdAt,
+    };
+
+    const fullOrderObj = {
+      id: reservationId,
+      order_number: orderNumber,
+      customer_id: customerObj.id,
+      beef_share: shareSize,
+      estimated_weight: 'TBD',
+      total_price: 0,
+      payment_status: 'Pending Deposit',
+      fulfillment_method: 'Pickup',
+      pickup_date: preferredDeliveryDate || '',
+      delivery_date: '',
+      current_status: 'Order Received',
+      notes: notes || '',
+      created_at: createdAt,
+      updated_at: createdAt,
+      customer: customerObj,
+      history: [
+        {
+          id: 'hist-' + Math.random().toString(36).substring(2, 9),
+          order_id: reservationId,
+          status: 'Order Received',
+          notes: notes || 'Reservation submitted via online concierge.',
+          created_at: createdAt,
+          created_by: 'System',
+        },
+      ],
+    };
+
+    // Save to server-side memory cache
+    serverOrdersCache.unshift(fullOrderObj);
+
+    // Save to Supabase from server if client is available
+    const supabase = getSupabaseServerClient();
+    if (supabase) {
+      try {
+        console.log(`[SERVER /api/reserve] Writing reservation #${orderNumber} to Supabase database...`);
+        const { data: custData, error: custErr } = await supabase
+          .from('customers')
+          .insert([
+            {
+              first_name: firstName,
+              last_name: lastName,
+              email: email,
+              phone: phone,
+              address: address,
+              city: city,
+              state: state,
+              zip_code: zip,
+            },
+          ])
+          .select()
+          .single();
+
+        if (custErr) {
+          console.warn('[SERVER /api/reserve] Customer insert note:', custErr.message);
+        }
+
+        const dbCustId = custData ? custData.id : customerObj.id;
+
+        const { data: ordData, error: ordErr } = await supabase
+          .from('orders')
+          .insert([
+            {
+              order_number: orderNumber,
+              customer_id: dbCustId,
+              beef_share: shareSize,
+              estimated_weight: 'TBD',
+              total_price: 0,
+              payment_status: 'Pending Deposit',
+              fulfillment_method: 'Pickup',
+              pickup_date: preferredDeliveryDate || '',
+              delivery_date: '',
+              current_status: 'Order Received',
+              notes: notes || '',
+            },
+          ])
+          .select()
+          .single();
+
+        if (ordErr) {
+          console.warn('[SERVER /api/reserve] Order insert note:', ordErr.message);
+        } else if (ordData) {
+          await supabase.from('order_history').insert([
+            {
+              order_id: ordData.id,
+              status: 'Order Received',
+              notes: notes || 'Reservation received',
+              created_by: 'System',
+            },
+          ]);
+          console.log(`[SERVER /api/reserve] Successfully persisted order #${orderNumber} in Supabase with DB ID ${ordData.id}`);
+        }
+      } catch (dbEx: any) {
+        console.error('[SERVER /api/reserve] Supabase write exception:', dbEx);
+      }
+    }
+
     const reservationRecord = {
       id: reservationId,
       orderNumber,
@@ -82,7 +197,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       preferredDeliveryDate: preferredDeliveryDate || '',
       notes: notes || '',
       createdAt,
-      status: 'Pending',
+      status: 'Order Received',
     };
 
     // Initialize Resend if API key exists

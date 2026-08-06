@@ -7,11 +7,20 @@ import {
   ReservationPayload,
 } from '../types';
 
-const env = (import.meta as any).env || {};
-const supabaseUrl = env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
-const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+function isValidHttpUrl(stringStr: string) {
+  try {
+    const u = new URL(stringStr);
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
 
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+const env = (import.meta as any).env || {};
+const supabaseUrl = (env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '').trim();
+const supabaseAnonKey = (env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '').trim();
+
+export const isSupabaseConfigured = isValidHttpUrl(supabaseUrl) && Boolean(supabaseAnonKey);
 
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey)
@@ -103,10 +112,30 @@ export async function fetchOrderForTracking(
     };
   }
 
-  // 1. Try Supabase
+  // 1. Try Backend API first (bypasses RLS issues and checks server DB)
+  try {
+    console.log(`[WORKFLOW STEP 5] Executing Backend Server Query via /api/track for Order "${cleanOrderNum}" and Email "${cleanEmail}"`);
+    const apiRes = await fetch('/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderNumber: cleanOrderNum, email: cleanEmail }),
+    });
+
+    const apiData = await apiRes.json();
+    if (apiRes.ok && apiData.success && apiData.order) {
+      console.log(`[WORKFLOW STEP 6] Server Query Success: Found order ${cleanOrderNum} for email ${cleanEmail}.`);
+      return { success: true, order: apiData.order };
+    } else if (apiData.message) {
+      console.warn(`[WORKFLOW STEP 6] Server Query Result: ${apiData.message}`);
+    }
+  } catch (apiErr) {
+    console.warn('[WORKFLOW STEP 6] /api/track fetch error, trying direct client lookup:', apiErr);
+  }
+
+  // 2. Try Direct Supabase Client Query
   if (supabase) {
     try {
-      console.log(`[WORKFLOW STEP 5] Executing Database Query: supabase.from('orders').select('*, customer:customers(*)').eq('order_number', '${cleanOrderNum}')`);
+      console.log(`[WORKFLOW STEP 5] Executing Direct Client Supabase Query: supabase.from('orders').select('*, customer:customers(*)').eq('order_number', '${cleanOrderNum}')`);
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .select(`
@@ -114,17 +143,16 @@ export async function fetchOrderForTracking(
           customer:customers(*)
         `)
         .eq('order_number', cleanOrderNum)
-        .single();
+        .maybeSingle();
 
       if (orderError) {
-        console.warn(`[WORKFLOW STEP 6] Query Execution Note: ${orderError.message}`);
+        console.warn(`[WORKFLOW STEP 6] Direct Query Execution Note: ${orderError.message}`);
       }
 
       if (orderData && orderData.customer) {
         const storedEmail = orderData.customer.email ? orderData.customer.email.trim().toLowerCase() : '';
         if (storedEmail === cleanEmail) {
-          console.log(`[WORKFLOW STEP 6] Query Success: Order ${cleanOrderNum} found for customer ${orderData.customer.first_name} (${storedEmail}).`);
-          // Fetch order history
+          console.log(`[WORKFLOW STEP 6] Direct Query Success: Order ${cleanOrderNum} found for customer ${orderData.customer.first_name} (${storedEmail}).`);
           const { data: historyData } = await supabase
             .from('order_history')
             .select('*')
@@ -144,14 +172,14 @@ export async function fetchOrderForTracking(
           };
         }
       } else {
-        console.warn(`[WORKFLOW STEP 6] Zero Rows Returned: No order record found in database with order_number = "${cleanOrderNum}".`);
+        console.warn(`[WORKFLOW STEP 6] Zero Rows Returned from client Supabase query for order_number = "${cleanOrderNum}".`);
       }
     } catch (err) {
-      console.warn('[WORKFLOW STEP 6] Supabase tracking lookup exception:', err);
+      console.warn('[WORKFLOW STEP 6] Client Supabase tracking lookup exception:', err);
     }
   }
 
-  // 2. Local fallback search
+  // 3. Local fallback search
   const orders = getLocalOrders();
   const matched = orders.find(
     (o) =>
@@ -173,6 +201,18 @@ export async function fetchOrderForTracking(
 
 // Fetch All Orders for Admin Dashboard
 export async function fetchAllOrdersForAdmin(): Promise<Order[]> {
+  try {
+    const res = await fetch('/api/orders');
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && Array.isArray(json.orders) && json.orders.length > 0) {
+        return json.orders;
+      }
+    }
+  } catch (err) {
+    console.warn('API /api/orders fetch error, falling back to direct database client:', err);
+  }
+
   if (supabase) {
     try {
       const { data, error } = await supabase
