@@ -75,13 +75,6 @@ export default function TrackOrderPage({ onNavigateToReservation }: TrackOrderPa
     performLookup(orderNumberInput, emailInput);
   };
 
-  // Quick fill demo buttons for testing preview
-  const handleQuickDemo = (num: string, email: string) => {
-    setOrderNumberInput(num);
-    setEmailInput(email);
-    performLookup(num, email);
-  };
-
   // Define tracking timeline steps based on fulfillment method
   const isDelivery = trackedOrder?.fulfillment_method?.toLowerCase() === 'delivery';
 

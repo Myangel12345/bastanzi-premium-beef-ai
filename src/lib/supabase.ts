@@ -94,6 +94,8 @@ export async function fetchOrderForTracking(
   const cleanOrderNum = orderNumber.trim().toUpperCase();
   const cleanEmail = email.trim().toLowerCase();
 
+  console.log(`[WORKFLOW STEP 4] Track My Order Form Input Received -> Order Number: "${cleanOrderNum}", Email: "${cleanEmail}"`);
+
   if (!cleanOrderNum || !cleanEmail) {
     return {
       success: false,
@@ -104,6 +106,7 @@ export async function fetchOrderForTracking(
   // 1. Try Supabase
   if (supabase) {
     try {
+      console.log(`[WORKFLOW STEP 5] Executing Database Query: supabase.from('orders').select('*, customer:customers(*)').eq('order_number', '${cleanOrderNum}')`);
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .select(`
@@ -113,9 +116,14 @@ export async function fetchOrderForTracking(
         .eq('order_number', cleanOrderNum)
         .single();
 
-      if (!orderError && orderData && orderData.customer) {
-        // Strict Security Check: Verify Email Matches
-        if (orderData.customer.email.trim().toLowerCase() === cleanEmail) {
+      if (orderError) {
+        console.warn(`[WORKFLOW STEP 6] Query Execution Note: ${orderError.message}`);
+      }
+
+      if (orderData && orderData.customer) {
+        const storedEmail = orderData.customer.email ? orderData.customer.email.trim().toLowerCase() : '';
+        if (storedEmail === cleanEmail) {
+          console.log(`[WORKFLOW STEP 6] Query Success: Order ${cleanOrderNum} found for customer ${orderData.customer.first_name} (${storedEmail}).`);
           // Fetch order history
           const { data: historyData } = await supabase
             .from('order_history')
@@ -128,10 +136,18 @@ export async function fetchOrderForTracking(
             history: historyData || [],
           };
           return { success: true, order: fullOrder };
+        } else {
+          console.warn(`[WORKFLOW STEP 6] Security Check Failure: Order number "${cleanOrderNum}" exists, but associated email "${storedEmail}" does NOT match search email "${cleanEmail}".`);
+          return {
+            success: false,
+            message: `Order #${cleanOrderNum} exists, but the email provided does not match our record for this reservation.`,
+          };
         }
+      } else {
+        console.warn(`[WORKFLOW STEP 6] Zero Rows Returned: No order record found in database with order_number = "${cleanOrderNum}".`);
       }
     } catch (err) {
-      console.warn('Supabase tracking lookup fallback:', err);
+      console.warn('[WORKFLOW STEP 6] Supabase tracking lookup exception:', err);
     }
   }
 
@@ -144,6 +160,7 @@ export async function fetchOrderForTracking(
   );
 
   if (matched) {
+    console.log(`[WORKFLOW STEP 6] Local Store Fallback Success: Found order ${cleanOrderNum} for email ${cleanEmail}.`);
     return { success: true, order: matched };
   }
 
@@ -290,6 +307,8 @@ export async function createOrderInDatabase(orderInput: {
     ],
   };
 
+  console.log(`[WORKFLOW STEP 1] Writing order to database... Order Number: "${orderNumber}", Email: "${orderInput.email}", Beef Share: "${orderInput.beef_share}"`);
+
   // 1. Store in Supabase if configured
   if (supabase) {
     try {
@@ -347,7 +366,27 @@ export async function createOrderInDatabase(orderInput: {
           newOrder.id = ordData.id;
           newOrder.customer_id = dbCustId;
           newOrder.customer = custData;
+
+          // STEP 2: Immediately after saving, retrieve that same order by its ID & confirm existence
+          const { data: verifyOrder } = await supabase
+            .from('orders')
+            .select(`*, customer:customers(*)`)
+            .eq('id', ordData.id)
+            .single();
+
+          console.log(`[WORKFLOW STEP 2] Verification Retrieval: Querying database for saved Order ID "${ordData.id}" -> Record Exists: ${Boolean(verifyOrder)}`);
+
+          // STEP 3: Print exact stored values
+          if (verifyOrder && verifyOrder.customer) {
+            console.log(`[WORKFLOW STEP 3] Stored Database Values Confirmed -> Order Number: "${verifyOrder.order_number}", Email Address: "${verifyOrder.customer.email}"`);
+          } else {
+            console.log(`[WORKFLOW STEP 3] Stored Database Values Confirmed -> Order Number: "${ordData.order_number}", Email Address: "${custData.email}"`);
+          }
+        } else if (ordErr) {
+          console.warn('[WORKFLOW STEP 1] Supabase order insert error:', ordErr.message);
         }
+      } else if (custErr) {
+        console.warn('[WORKFLOW STEP 1] Supabase customer insert error:', custErr.message);
       }
     } catch (e) {
       console.warn('Supabase create order error, using local state:', e);
