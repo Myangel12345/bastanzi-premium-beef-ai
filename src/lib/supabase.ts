@@ -7,46 +7,62 @@ import {
   ReservationPayload,
 } from '../types';
 
-function isValidHttpUrl(stringStr: string) {
-  try {
-    const u = new URL(stringStr);
-    return u.protocol === 'http:' || u.protocol === 'https:';
-  } catch {
-    return false;
-  }
-}
-
 const env = (import.meta as any).env || {};
 const supabaseUrl = (env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '').trim();
 const supabaseAnonKey = (env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '').trim();
 
-export const isSupabaseConfigured = isValidHttpUrl(supabaseUrl) && Boolean(supabaseAnonKey);
+const isUrlValid = (url: string) => {
+  try {
+    return Boolean(url && (url.startsWith('http://') || url.startsWith('https://')));
+  } catch {
+    return false;
+  }
+};
 
-export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
+export const isSupabaseConfigured = Boolean(
+  isUrlValid(supabaseUrl) && supabaseAnonKey && supabaseAnonKey.length > 10
+);
+
+export const supabase = (() => {
+  if (!isSupabaseConfigured) return null;
+  try {
+    return createClient(supabaseUrl, supabaseAnonKey);
+  } catch (err) {
+    console.warn('Failed to initialize Supabase client:', err);
+    return null;
+  }
+})();
 
 // Initial sample orders for fallback or demo (empty for production)
 const DEFAULT_DEMO_ORDERS: Order[] = [];
 
+// In-memory fallback if localStorage is unavailable
+let memoryOrders: Order[] = [];
+
 // Helper to get local orders
 function getLocalOrders(): Order[] {
   try {
-    const raw = localStorage.getItem('bastanzi_orders');
-    if (!raw) {
-      localStorage.setItem('bastanzi_orders', JSON.stringify(DEFAULT_DEMO_ORDERS));
-      return DEFAULT_DEMO_ORDERS;
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const raw = localStorage.getItem('bastanzi_orders');
+      if (!raw) {
+        localStorage.setItem('bastanzi_orders', JSON.stringify(DEFAULT_DEMO_ORDERS));
+        return DEFAULT_DEMO_ORDERS;
+      }
+      return JSON.parse(raw);
     }
-    return JSON.parse(raw);
   } catch {
-    return DEFAULT_DEMO_ORDERS;
+    // fallback
   }
+  return memoryOrders.length > 0 ? memoryOrders : DEFAULT_DEMO_ORDERS;
 }
 
 // Helper to save local orders
 function saveLocalOrders(orders: Order[]) {
+  memoryOrders = orders;
   try {
-    localStorage.setItem('bastanzi_orders', JSON.stringify(orders));
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem('bastanzi_orders', JSON.stringify(orders));
+    }
   } catch (err) {
     console.error('Failed to save to localStorage:', err);
   }
@@ -103,8 +119,6 @@ export async function fetchOrderForTracking(
   const cleanOrderNum = orderNumber.trim().toUpperCase();
   const cleanEmail = email.trim().toLowerCase();
 
-  console.log(`[WORKFLOW STEP 4] Track My Order Form Input Received -> Order Number: "${cleanOrderNum}", Email: "${cleanEmail}"`);
-
   if (!cleanOrderNum || !cleanEmail) {
     return {
       success: false,
@@ -112,47 +126,23 @@ export async function fetchOrderForTracking(
     };
   }
 
-  // 1. Try Backend API first (bypasses RLS issues and checks server DB)
-  try {
-    console.log(`[WORKFLOW STEP 5] Executing Backend Server Query via /api/track for Order "${cleanOrderNum}" and Email "${cleanEmail}"`);
-    const apiRes = await fetch('/api/track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderNumber: cleanOrderNum, email: cleanEmail }),
-    });
-
-    const apiData = await apiRes.json();
-    if (apiRes.ok && apiData.success && apiData.order) {
-      console.log(`[WORKFLOW STEP 6] Server Query Success: Found order ${cleanOrderNum} for email ${cleanEmail}.`);
-      return { success: true, order: apiData.order };
-    } else if (apiData.message) {
-      console.warn(`[WORKFLOW STEP 6] Server Query Result: ${apiData.message}`);
-    }
-  } catch (apiErr) {
-    console.warn('[WORKFLOW STEP 6] /api/track fetch error, trying direct client lookup:', apiErr);
-  }
-
-  // 2. Try Direct Supabase Client Query
+  // 1. Try Supabase
   if (supabase) {
     try {
-      console.log(`[WORKFLOW STEP 5] Executing Direct Client Supabase Query: supabase.from('orders').select('*, customer:customers(*)').eq('order_number', '${cleanOrderNum}')`);
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .select(`
           *,
           customer:customers(*)
         `)
-        .eq('order_number', cleanOrderNum)
+        .or(`order_number.ilike.${cleanOrderNum},id.ilike.${cleanOrderNum}`)
+        .limit(1)
         .maybeSingle();
 
-      if (orderError) {
-        console.warn(`[WORKFLOW STEP 6] Direct Query Execution Note: ${orderError.message}`);
-      }
-
-      if (orderData && orderData.customer) {
-        const storedEmail = orderData.customer.email ? orderData.customer.email.trim().toLowerCase() : '';
-        if (storedEmail === cleanEmail) {
-          console.log(`[WORKFLOW STEP 6] Direct Query Success: Order ${cleanOrderNum} found for customer ${orderData.customer.first_name} (${storedEmail}).`);
+      if (!orderError && orderData && orderData.customer) {
+        // Strict Security Check: Verify Email Matches
+        if (orderData.customer.email.trim().toLowerCase() === cleanEmail) {
+          // Fetch order history
           const { data: historyData } = await supabase
             .from('order_history')
             .select('*')
@@ -164,31 +154,23 @@ export async function fetchOrderForTracking(
             history: historyData || [],
           };
           return { success: true, order: fullOrder };
-        } else {
-          console.warn(`[WORKFLOW STEP 6] Security Check Failure: Order number "${cleanOrderNum}" exists, but associated email "${storedEmail}" does NOT match search email "${cleanEmail}".`);
-          return {
-            success: false,
-            message: `Order #${cleanOrderNum} exists, but the email provided does not match our record for this reservation.`,
-          };
         }
-      } else {
-        console.warn(`[WORKFLOW STEP 6] Zero Rows Returned from client Supabase query for order_number = "${cleanOrderNum}".`);
       }
     } catch (err) {
-      console.warn('[WORKFLOW STEP 6] Client Supabase tracking lookup exception:', err);
+      console.warn('Supabase tracking lookup fallback:', err);
     }
   }
 
-  // 3. Local fallback search
+  // 2. Local fallback search
   const orders = getLocalOrders();
   const matched = orders.find(
     (o) =>
-      o.order_number.trim().toUpperCase() === cleanOrderNum &&
+      (o.order_number.trim().toUpperCase() === cleanOrderNum ||
+        o.id.trim().toUpperCase() === cleanOrderNum) &&
       o.customer?.email.trim().toLowerCase() === cleanEmail
   );
 
   if (matched) {
-    console.log(`[WORKFLOW STEP 6] Local Store Fallback Success: Found order ${cleanOrderNum} for email ${cleanEmail}.`);
     return { success: true, order: matched };
   }
 
@@ -201,18 +183,6 @@ export async function fetchOrderForTracking(
 
 // Fetch All Orders for Admin Dashboard
 export async function fetchAllOrdersForAdmin(): Promise<Order[]> {
-  try {
-    const res = await fetch('/api/orders');
-    if (res.ok) {
-      const json = await res.json();
-      if (json.success && Array.isArray(json.orders) && json.orders.length > 0) {
-        return json.orders;
-      }
-    }
-  } catch (err) {
-    console.warn('API /api/orders fetch error, falling back to direct database client:', err);
-  }
-
   if (supabase) {
     try {
       const { data, error } = await supabase
@@ -256,7 +226,8 @@ export async function sendOrderNotificationEmail(
   customNotes?: string
 ) {
   try {
-    await fetch('/api/notify-order', {
+    const url = typeof window !== 'undefined' ? '/api/notify-order' : 'http://localhost:3000/api/notify-order';
+    await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -280,7 +251,6 @@ export async function sendOrderNotificationEmail(
 
 // Create New Order
 export async function createOrderInDatabase(orderInput: {
-  order_number?: string;
   first_name: string;
   last_name: string;
   email: string;
@@ -299,7 +269,7 @@ export async function createOrderInDatabase(orderInput: {
   notes?: string;
   current_status?: string;
 }): Promise<{ success: boolean; order?: Order; error?: string }> {
-  const orderNumber = orderInput.order_number || (await generateOrderNumber());
+  const orderNumber = await generateOrderNumber();
   const timestamp = new Date().toISOString();
   const initialStatus = orderInput.current_status || 'Order Received';
 
@@ -346,8 +316,6 @@ export async function createOrderInDatabase(orderInput: {
       },
     ],
   };
-
-  console.log(`[WORKFLOW STEP 1] Writing order to database... Order Number: "${orderNumber}", Email: "${orderInput.email}", Beef Share: "${orderInput.beef_share}"`);
 
   // 1. Store in Supabase if configured
   if (supabase) {
@@ -406,27 +374,7 @@ export async function createOrderInDatabase(orderInput: {
           newOrder.id = ordData.id;
           newOrder.customer_id = dbCustId;
           newOrder.customer = custData;
-
-          // STEP 2: Immediately after saving, retrieve that same order by its ID & confirm existence
-          const { data: verifyOrder } = await supabase
-            .from('orders')
-            .select(`*, customer:customers(*)`)
-            .eq('id', ordData.id)
-            .single();
-
-          console.log(`[WORKFLOW STEP 2] Verification Retrieval: Querying database for saved Order ID "${ordData.id}" -> Record Exists: ${Boolean(verifyOrder)}`);
-
-          // STEP 3: Print exact stored values
-          if (verifyOrder && verifyOrder.customer) {
-            console.log(`[WORKFLOW STEP 3] Stored Database Values Confirmed -> Order Number: "${verifyOrder.order_number}", Email Address: "${verifyOrder.customer.email}"`);
-          } else {
-            console.log(`[WORKFLOW STEP 3] Stored Database Values Confirmed -> Order Number: "${ordData.order_number}", Email Address: "${custData.email}"`);
-          }
-        } else if (ordErr) {
-          console.warn('[WORKFLOW STEP 1] Supabase order insert error:', ordErr.message);
         }
-      } else if (custErr) {
-        console.warn('[WORKFLOW STEP 1] Supabase customer insert error:', custErr.message);
       }
     } catch (e) {
       console.warn('Supabase create order error, using local state:', e);
@@ -620,13 +568,12 @@ export async function deleteOrderFromDatabase(orderId: string): Promise<boolean>
 }
 
 // Existing Reservation integration function updated to create an Order
-export async function saveReservationToDatabase(reservation: ReservationPayload, customOrderNumber?: string) {
+export async function saveReservationToDatabase(reservation: ReservationPayload) {
   const nameParts = reservation.name.trim().split(' ');
   const firstName = nameParts[0] || 'Valued';
   const lastName = nameParts.slice(1).join(' ') || 'Customer';
 
   const res = await createOrderInDatabase({
-    order_number: customOrderNumber,
     first_name: firstName,
     last_name: lastName,
     email: reservation.email,

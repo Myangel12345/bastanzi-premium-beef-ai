@@ -2,7 +2,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import confetti from 'canvas-confetti';
 import { BEEF_SHARE_TIERS, BRAND_IMAGES } from '../data/content';
 import { ShareSize, FinishOption, ReservationPayload } from '../types';
-import { saveReservationToDatabase, generateOrderNumber } from '../lib/supabase';
+import { saveReservationToDatabase } from '../lib/supabase';
 import { getActiveHarvestBatches } from '../lib/harvestBatches';
 import { Check, ShieldCheck, ArrowRight, ArrowLeft, CheckCircle2, Printer, AlertCircle, Home, Truck, Sparkles } from 'lucide-react';
 import SeoHead from '../components/SeoHead';
@@ -90,31 +90,31 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
     };
 
     try {
-      // Generate official BST-2026-xxxxxx order number first
-      const officialOrderNumber = await generateOrderNumber();
+      // 1. Save into Supabase database (or local store fallback) to get official order number
+      const dbResult = await saveReservationToDatabase(payload);
+      const officialOrderNum = dbResult.orderNumber || dbResult.id || 'BST-2026-' + Math.floor(100000 + Math.random() * 900000);
 
-      // 1. Save into Supabase database (or local store fallback) with standardized order number
-      const dbResult = await saveReservationToDatabase(payload, officialOrderNumber);
-      const finalOrderNum = dbResult.orderNumber || dbResult.id || officialOrderNumber;
-
-      // 2. Call Backend API for Resend emails & server logging with matching order number
-      const res = await fetch('/api/reserve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...payload, orderNumber: finalOrderNum }),
-      });
-
-      const serverData = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        const errorText = serverData.error || serverData.message || `Server returned HTTP status ${res.status}`;
-        console.error('Reservation API error response:', res.status, errorText);
-        setErrorMsg(`Reservation Error: ${errorText}`);
-        return;
+      // 2. Call Backend API for Resend emails & server logging with official orderNumber
+      let serverData: any = {};
+      try {
+        const res = await fetch('/api/reserve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...payload,
+            orderNumber: officialOrderNum,
+          }),
+        });
+        serverData = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          console.warn('Reservation API email/logger warning:', res.status, serverData);
+        }
+      } catch (apiErr) {
+        console.warn('Backend reserve API fetch warning (proceeding with local order):', apiErr);
       }
 
       const record = {
-        id: finalOrderNum,
+        id: officialOrderNum,
         ...payload,
         createdAt: new Date().toLocaleDateString('en-US', {
           month: 'long',

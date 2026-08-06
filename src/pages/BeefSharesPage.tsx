@@ -3,7 +3,6 @@ import { Package, Check, ArrowRight, Info, ShieldCheck, ChevronDown, ChevronUp }
 import { BEEF_SHARE_TIERS } from '../data/content';
 import { ShareSize } from '../types';
 import SeoHead from '../components/SeoHead';
-import IndividualCutsSection from '../components/IndividualCutsSection';
 
 interface BeefSharesPageProps {
   onSelectShare: (shareSize: ShareSize) => void;
@@ -145,9 +144,6 @@ export default function BeefSharesPage({ onSelectShare, onNavigateToContact }: B
             </button>
           </div>
         </div>
-
-        {/* Individual Premium Beef Cuts Section */}
-        <IndividualCutsSection onNavigateToContact={onNavigateToContact} />
 
         {/* Detailed Cut Breakdown Accordions */}
         <div className="bg-[#102218] border border-emerald-800/60 rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl">

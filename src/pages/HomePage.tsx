@@ -212,7 +212,7 @@ export default function HomePage({ setActiveTab, onSelectShare }: HomePageProps)
       </section>
 
       {/* NEW SECTION 3: Premium Beef Cuts */}
-      <PremiumCutsSection onNavigateToContact={() => setActiveTab('contact')} />
+      <PremiumCutsSection />
 
       {/* NEW SECTION 4: Freezer-Ready Packaging */}
       <FreezerPackagingSection />

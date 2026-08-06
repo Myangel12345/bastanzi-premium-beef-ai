@@ -142,14 +142,3 @@ export interface ReviewItem {
   date: string;
   comment: string;
 }
-
-export interface IndividualCutItem {
-  id: string;
-  name: string;
-  fullName: string;
-  category: 'steaks' | 'roasts' | 'ground' | 'specialty';
-  description: string;
-  cooking: string;
-  imageUrl: string;
-  priceNotice: string;
-}
