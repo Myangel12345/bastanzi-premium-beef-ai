@@ -62,11 +62,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    const reservationId = 'RES-' + Math.random().toString(36).substring(2, 9).toUpperCase();
+    // Standardized Bastanzi Order Number format
+    const orderNumber = body.orderNumber || body.order_number || (`BST-2026-${Math.floor(100000 + Math.random() * 900000)}`);
+    const reservationId = orderNumber;
     const createdAt = new Date().toISOString();
 
     const reservationRecord = {
       id: reservationId,
+      orderNumber,
       name,
       email,
       phone: phone || 'N/A',
@@ -94,14 +97,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         await resend.emails.send({
           from: fromEmail,
           to: [notificationEmail, email],
-          subject: `✨ New Beef Share Reservation #${reservationId} - Bastanzi Premium Beef Co.`,
+          subject: `✨ New Beef Share Reservation #${orderNumber} - Bastanzi Premium Beef Co.`,
           html: `
             <div style="font-family: 'Georgia', serif; background-color: #0c0c0e; color: #f4f4f6; padding: 40px; border-radius: 8px; border: 1px solid #d4af37;">
               <h1 style="color: #d4af37; margin-bottom: 8px;">BASTANZI PREMIUM BEEF CO.</h1>
               <p style="text-transform: uppercase; letter-spacing: 2px; color: #a1a1aa; font-size: 12px;">Pasture to Table Luxury Beef Reservation</p>
               <hr style="border-color: #27272a; margin: 20px 0;" />
               
-              <h2 style="color: #ffffff;">Reservation Summary #${reservationId}</h2>
+              <h2 style="color: #ffffff;">Reservation Summary #${orderNumber}</h2>
               <p><strong>Customer:</strong> ${name}</p>
               <p><strong>Email:</strong> ${email}</p>
               <p><strong>Address:</strong> ${address || ''}, ${city || ''}, ${state || ''} ${zip || ''}</p>

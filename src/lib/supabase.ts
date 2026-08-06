@@ -223,6 +223,7 @@ export async function sendOrderNotificationEmail(
 
 // Create New Order
 export async function createOrderInDatabase(orderInput: {
+  order_number?: string;
   first_name: string;
   last_name: string;
   email: string;
@@ -241,7 +242,7 @@ export async function createOrderInDatabase(orderInput: {
   notes?: string;
   current_status?: string;
 }): Promise<{ success: boolean; order?: Order; error?: string }> {
-  const orderNumber = await generateOrderNumber();
+  const orderNumber = orderInput.order_number || (await generateOrderNumber());
   const timestamp = new Date().toISOString();
   const initialStatus = orderInput.current_status || 'Order Received';
 
@@ -540,12 +541,13 @@ export async function deleteOrderFromDatabase(orderId: string): Promise<boolean>
 }
 
 // Existing Reservation integration function updated to create an Order
-export async function saveReservationToDatabase(reservation: ReservationPayload) {
+export async function saveReservationToDatabase(reservation: ReservationPayload, customOrderNumber?: string) {
   const nameParts = reservation.name.trim().split(' ');
   const firstName = nameParts[0] || 'Valued';
   const lastName = nameParts.slice(1).join(' ') || 'Customer';
 
   const res = await createOrderInDatabase({
+    order_number: customOrderNumber,
     first_name: firstName,
     last_name: lastName,
     email: reservation.email,

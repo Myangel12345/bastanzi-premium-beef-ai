@@ -2,7 +2,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import confetti from 'canvas-confetti';
 import { BEEF_SHARE_TIERS, BRAND_IMAGES } from '../data/content';
 import { ShareSize, FinishOption, ReservationPayload } from '../types';
-import { saveReservationToDatabase } from '../lib/supabase';
+import { saveReservationToDatabase, generateOrderNumber } from '../lib/supabase';
 import { getActiveHarvestBatches } from '../lib/harvestBatches';
 import { Check, ShieldCheck, ArrowRight, ArrowLeft, CheckCircle2, Printer, AlertCircle, Home, Truck, Sparkles } from 'lucide-react';
 import SeoHead from '../components/SeoHead';
@@ -90,11 +90,18 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
     };
 
     try {
-      // 1. Call Backend API for Resend emails & server logging
+      // Generate official BST-2026-xxxxxx order number first
+      const officialOrderNumber = await generateOrderNumber();
+
+      // 1. Save into Supabase database (or local store fallback) with standardized order number
+      const dbResult = await saveReservationToDatabase(payload, officialOrderNumber);
+      const finalOrderNum = dbResult.orderNumber || dbResult.id || officialOrderNumber;
+
+      // 2. Call Backend API for Resend emails & server logging with matching order number
       const res = await fetch('/api/reserve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ ...payload, orderNumber: finalOrderNum }),
       });
 
       const serverData = await res.json().catch(() => ({}));
@@ -106,11 +113,8 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
         return;
       }
 
-      // 2. Also save into Supabase database (or local store fallback)
-      const dbResult = await saveReservationToDatabase(payload);
-
       const record = {
-        id: serverData.reservationId || dbResult.id || 'RES-' + Date.now(),
+        id: finalOrderNum,
         ...payload,
         createdAt: new Date().toLocaleDateString('en-US', {
           month: 'long',
