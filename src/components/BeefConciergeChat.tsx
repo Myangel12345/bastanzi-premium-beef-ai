@@ -112,11 +112,63 @@ export default function BeefConciergeChat({
       });
 
       const data = await res.json();
-      if (data.conversation) {
+      const aiResponseText =
+        data.message ||
+        data.reply ||
+        (data.conversation?.lastMessage) ||
+        "Sorry, I’m temporarily unable to answer right now. Please try again.";
+
+      if (data.conversation && Array.isArray(data.conversation.messages)) {
+        // Ensure the last message in data.conversation is from AI and has non-empty text
+        const lastMsg = data.conversation.messages[data.conversation.messages.length - 1];
+        if (!lastMsg || lastMsg.sender === 'user' || !lastMsg.text || !lastMsg.text.trim()) {
+          const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const nowIso = new Date().toISOString();
+          data.conversation.messages.push({
+            id: 'ai_' + Date.now(),
+            sender: 'ai',
+            text: aiResponseText,
+            timestamp: nowTime,
+            createdAt: nowIso,
+          });
+        }
         setConversation(data.conversation);
+      } else {
+        const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const nowIso = new Date().toISOString();
+        const aiReplyMsg: ChatMessage = {
+          id: 'ai_' + Date.now(),
+          sender: 'ai',
+          text: aiResponseText,
+          timestamp: nowTime,
+          createdAt: nowIso,
+        };
+        setConversation((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            messages: [...prev.messages, aiReplyMsg],
+          };
+        });
       }
     } catch (err) {
       console.error('Chat error:', err);
+      const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const nowIso = new Date().toISOString();
+      const errAiMsg: ChatMessage = {
+        id: 'err_' + Date.now(),
+        sender: 'ai',
+        text: "Sorry, I’m temporarily unable to answer right now. Please try again.",
+        timestamp: nowTime,
+        createdAt: nowIso,
+      };
+      setConversation((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          messages: [...prev.messages, errAiMsg],
+        };
+      });
     } finally {
       setLoading(false);
     }

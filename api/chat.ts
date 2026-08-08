@@ -180,6 +180,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       saveConversation(conv);
 
       return res.status(200).json({
+        message: escalationReply,
         reply: escalationReply,
         conversation: conv,
       });
@@ -188,74 +189,107 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Call Gemini API for smart concierge response with conversation memory
     const apiKey = process.env.GEMINI_API_KEY;
 
+    let replyText = '';
+
     if (!apiKey) {
-      // Fallback response generator if key is missing
+      console.warn('[Chat API] GEMINI_API_KEY is missing in process.env. Generating fallback response from live knowledge base.');
       const liveStore = loadContentStore();
       const liveTiers = liveStore.shareTiers;
       const pricesSummary = liveTiers.map((t) => `${t.title}: ${t.priceRange} ($${t.depositAmount} deposit, ${t.weightLbs})`).join(', ');
 
-      let reply = "Welcome to Bastanzi Premium Beef Co.! ";
+      replyText = "Welcome to Bastanzi Premium Beef Co.! ";
       if (lower.includes('price') || lower.includes('cost') || lower.includes('how much')) {
-        reply += `Our live Beef Share rates are: ${pricesSummary}. Local delivery is $${liveStore.fees.localDeliveryFee} and nationwide express shipping is $${liveStore.fees.nationwideShippingFee}.`;
+        replyText += `Our live Beef Share rates are: ${pricesSummary}. Local delivery is $${liveStore.fees.localDeliveryFee} and nationwide express shipping is $${liveStore.fees.nationwideShippingFee}.`;
       } else if (lower.includes('freezer') || lower.includes('space')) {
-        reply += "Rule of thumb: 1 cubic foot holds ~35–40 lbs of packaged beef. An Eighth Share fits right inside a standard kitchen refrigerator freezer (~2–2.5 cu. ft.), a Quarter Share needs 4–5 cu. ft., a Half Share needs 8–10 cu. ft., and a Full Share requires an 18 cu. ft. chest freezer.";
+        replyText += "Rule of thumb: 1 cubic foot holds ~35–40 lbs of packaged beef. An Eighth Share fits right inside a standard kitchen refrigerator freezer (~2–2.5 cu. ft.), a Quarter Share needs 4–5 cu. ft., a Half Share needs 8–10 cu. ft., and a Full Share requires an 18 cu. ft. chest freezer.";
       } else if (lower.includes('cut') || lower.includes('ribeye') || lower.includes('brisket') || lower.includes('filet')) {
-        reply += "All of our shares include a balanced mix of 21-day dry-aged Prime Steaks (Ribeyes, NY Strips, Filet Mignon, Sirloin), Roasts & Slow Cuts (Chuck Roast, Brisket, Short Ribs, Rump Roast), and Gourmet Ground Beef (1lb vacuum packs).";
+        replyText += "All of our shares include a balanced mix of 21-day dry-aged Prime Steaks (Ribeyes, NY Strips, Filet Mignon, Sirloin), Roasts & Slow Cuts (Chuck Roast, Brisket, Short Ribs, Rump Roast), and Gourmet Ground Beef (1lb vacuum packs).";
       } else {
-        reply += "We offer 21-day dry-aged pasture-raised beef shares with grass-fed and grain-finished butchering options, delivered direct to your door. How can I help you choose the right share today?";
+        replyText += "We offer 21-day dry-aged pasture-raised beef shares with grass-fed and grain-finished butchering options, delivered direct to your door. How can I help you choose the right share today?";
       }
+    } else {
+      try {
+        const ai = new GoogleGenAI({
+          apiKey,
+          httpOptions: {
+            headers: {
+              'User-Agent': 'aistudio-build',
+            },
+          },
+        });
 
-      const aiMsg: ChatMessage = {
-        id: 'ai_' + Date.now(),
-        sender: 'ai',
-        text: reply,
-        timestamp: nowTime,
-        createdAt: nowIso,
-      };
-      conv.messages.push(aiMsg);
-      conv.lastMessage = reply;
-      saveConversation(conv);
+        // Format previous messages (up to 12 recent messages) for memory context, ensuring strictly alternating roles
+        const contents: any[] = [];
+        const historyMsgs = conv.messages.slice(-12);
 
-      return res.status(200).json({ reply, conversation: conv });
+        for (const m of historyMsgs) {
+          const role = m.sender === 'user' ? 'user' : m.sender === 'ai' ? 'model' : null;
+          if (!role) continue;
+
+          const text = (m.text || '').trim();
+          if (!text) continue;
+
+          if (contents.length > 0 && contents[contents.length - 1].role === role) {
+            contents[contents.length - 1].parts[0].text += '\n\n' + text;
+          } else {
+            contents.push({
+              role,
+              parts: [{ text }],
+            });
+          }
+        }
+
+        // CRITICAL FIX: Gemini API requires contents[0].role to be 'user'
+        while (contents.length > 0 && contents[0].role === 'model') {
+          contents.shift();
+        }
+
+        // Ensure contents is non-empty and has at least the current user message
+        if (contents.length === 0) {
+          contents.push({
+            role: 'user',
+            parts: [{ text: message.trim() }],
+          });
+        }
+
+        console.log(`[Chat API] Invoking Gemini API (gemini-3.6-flash) with ${contents.length} message history blocks...`);
+        const response = await ai.models.generateContent({
+          model: 'gemini-3.6-flash',
+          contents,
+          config: {
+            systemInstruction: buildDynamicSystemInstruction(),
+            temperature: 0.7,
+          },
+        });
+
+        let rawText = '';
+        if (typeof response?.text === 'string' && response.text.trim()) {
+          rawText = response.text.trim();
+        } else if (response?.candidates?.[0]?.content?.parts) {
+          rawText = response.candidates[0].content.parts
+            .map((p: any) => p?.text || '')
+            .join('')
+            .trim();
+        }
+
+        console.log('[Chat API] Gemini API response received. Character length:', rawText.length);
+
+        if (rawText) {
+          replyText = rawText;
+        } else {
+          console.warn('[Chat API] Gemini returned an empty or whitespace text response.');
+          replyText = "Sorry, I’m temporarily unable to answer right now. Please try again.";
+        }
+      } catch (geminiErr: any) {
+        console.error('[Chat API] Gemini API execution failed:', geminiErr?.stack || geminiErr?.message || geminiErr);
+        replyText = "Sorry, I’m temporarily unable to answer right now. Please try again.";
+      }
     }
 
-    const ai = new GoogleGenAI({
-      apiKey,
-      httpOptions: {
-        headers: {
-          'User-Agent': 'aistudio-build',
-        },
-      },
-    });
-
-    // Format previous messages (up to 12 recent messages) for memory context
-    const contents: any[] = [];
-    const historyMsgs = conv.messages.slice(-12);
-
-    for (const m of historyMsgs) {
-      if (m.sender === 'user') {
-        contents.push({
-          role: 'user',
-          parts: [{ text: m.text }],
-        });
-      } else if (m.sender === 'ai') {
-        contents.push({
-          role: 'model',
-          parts: [{ text: m.text }],
-        });
-      }
+    // Ensure replyText is never blank
+    if (!replyText || !replyText.trim()) {
+      replyText = "Sorry, I’m temporarily unable to answer right now. Please try again.";
     }
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
-      contents,
-      config: {
-        systemInstruction: buildDynamicSystemInstruction(),
-        temperature: 0.7,
-      },
-    });
-
-    let replyText = response.text || "Thank you for asking about Bastanzi Premium Beef Co. How else can I assist you with your beef share selection?";
 
     // Check if Gemini triggered escalation wording
     if (replyText.includes("I can connect you with a Bastanzi Premium Beef Co. support representative")) {
@@ -276,12 +310,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     conv.lastMessage = replyText;
     saveConversation(conv);
 
-    return res.status(200).json({ reply: replyText, conversation: conv });
+    return res.status(200).json({
+      message: replyText,
+      reply: replyText,
+      conversation: conv,
+    });
   } catch (err: any) {
-    console.error('Gemini chat API error:', err);
-    return res.status(500).json({
-      error: 'Concierge desk is temporarily busy.',
-      details: err?.message || 'Error processing request',
+    console.error('[Chat API] Handler error caught:', err?.stack || err?.message || err);
+    
+    // Always return a valid message field to prevent blank customer messages
+    const fallbackMessage = "Sorry, I’m temporarily unable to answer right now. Please try again.";
+    return res.status(200).json({
+      message: fallbackMessage,
+      reply: fallbackMessage,
+      error: err?.message || 'Server processing error',
     });
   }
 }
