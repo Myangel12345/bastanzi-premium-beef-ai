@@ -8,9 +8,30 @@ import {
   ManagedPhoto,
 } from '../types';
 
-const env = (import.meta as any).env || {};
-const supabaseUrl = (env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '').trim();
-const supabaseAnonKey = (env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '').trim();
+const getEnv = (key: string): string => {
+  try {
+    if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
+      const v = (import.meta as any).env[key] || (import.meta as any).env[`VITE_${key}`];
+      if (v) return String(v).trim();
+    }
+  } catch {}
+  try {
+    if (typeof process !== 'undefined' && process.env) {
+      const v = process.env[key] || process.env[`VITE_${key}`];
+      if (v) return String(v).trim();
+    }
+  } catch {}
+  try {
+    if (typeof window !== 'undefined' && (window as any).__ENV__) {
+      const v = (window as any).__ENV__[key] || (window as any).__ENV__[`VITE_${key}`];
+      if (v) return String(v).trim();
+    }
+  } catch {}
+  return '';
+};
+
+const supabaseUrl = getEnv('VITE_SUPABASE_URL') || getEnv('SUPABASE_URL');
+const supabaseAnonKey = getEnv('VITE_SUPABASE_ANON_KEY') || getEnv('SUPABASE_ANON_KEY');
 
 const isUrlValid = (url: string) => {
   try {
@@ -136,6 +157,48 @@ export async function fetchPhotosFromSupabase(): Promise<ManagedPhoto[] | null> 
     }
   } catch (err) {
     console.warn('Supabase photos fetch exception:', err);
+  }
+  return null;
+}
+
+// Sync content store JSON state to Supabase database table 'content_store'
+export async function syncContentStoreToSupabase(contentData: any): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('content_store').upsert(
+      {
+        id: 'main',
+        data: contentData,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'id' }
+    );
+    if (error) {
+      console.warn('Supabase content store upsert warning:', error.message || error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Supabase content store sync exception:', err);
+    return false;
+  }
+}
+
+// Fetch content store JSON state from Supabase database table 'content_store'
+export async function fetchContentStoreFromSupabase(): Promise<any | null> {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('content_store')
+      .select('data')
+      .eq('id', 'main')
+      .maybeSingle();
+
+    if (!error && data?.data) {
+      return data.data;
+    }
+  } catch (err) {
+    console.warn('Supabase content store fetch exception:', err);
   }
   return null;
 }

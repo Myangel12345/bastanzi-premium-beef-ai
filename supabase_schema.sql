@@ -102,3 +102,38 @@ CREATE POLICY "Allow admin user checks" ON public.admin_users
 INSERT INTO public.admin_users (email, role)
 VALUES ('admin@bastanzibeef.com', 'admin')
 ON CONFLICT (email) DO NOTHING;
+
+-- 5. Managed Photos Table
+CREATE TABLE IF NOT EXISTS public.photos (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  category TEXT NOT NULL,
+  category_label TEXT,
+  image_url TEXT NOT NULL,
+  description TEXT,
+  target_section TEXT DEFAULT 'gallery',
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 6. Content Store Table (site pricing, fees, and photo metadata JSON)
+CREATE TABLE IF NOT EXISTS public.content_store (
+  id TEXT PRIMARY KEY DEFAULT 'main',
+  data JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS for photos and content_store
+ALTER TABLE public.photos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.content_store ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public read photos" ON public.photos
+  FOR SELECT USING (true);
+
+CREATE POLICY "Allow public write photos" ON public.photos
+  FOR ALL USING (true);
+
+CREATE POLICY "Allow public read content store" ON public.content_store
+  FOR SELECT USING (true);
+
+CREATE POLICY "Allow public write content store" ON public.content_store
+  FOR ALL USING (true);

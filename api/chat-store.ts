@@ -58,6 +58,47 @@ function persistStore() {
   }
 }
 
+export function deduplicateMessages(messages: ChatMessage[]): ChatMessage[] {
+  if (!Array.isArray(messages)) return [];
+
+  const seenIds = new Set<string>();
+  const seenRoleText = new Set<string>();
+  const result: ChatMessage[] = [];
+
+  for (const msg of messages) {
+    if (!msg || typeof msg !== 'object') continue;
+
+    const id = (msg.id || '').trim();
+    const sender = (msg.sender || 'user').trim();
+    const text = (msg.text || '').trim();
+
+    if (!text || text === 'TEMPORARY_ERROR') continue;
+
+    // Check duplicate by ID
+    if (id && seenIds.has(id)) {
+      continue;
+    }
+
+    // Check duplicate by role + text content
+    const signature = `${sender}::${text}`;
+    if (seenRoleText.has(signature)) {
+      continue;
+    }
+
+    if (id) seenIds.add(id);
+    seenRoleText.add(signature);
+
+    result.push({
+      ...msg,
+      id: id || `msg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      sender: sender as ChatRole,
+      text,
+    });
+  }
+
+  return result;
+}
+
 export function getOrCreateConversation(
   conversationId: string,
   customerName?: string,
@@ -94,6 +135,7 @@ export function getOrCreateConversation(
   } else {
     if (customerName && !conv.customerName) conv.customerName = customerName;
     if (customerEmail && !conv.customerEmail) conv.customerEmail = customerEmail;
+    conv.messages = deduplicateMessages(conv.messages);
   }
 
   return conv;
@@ -102,6 +144,7 @@ export function getOrCreateConversation(
 export function saveConversation(conv: ChatConversation): void {
   const store = loadStore();
   conv.updatedAt = new Date().toISOString();
+  conv.messages = deduplicateMessages(conv.messages);
   store.set(conv.id, conv);
   persistStore();
 }

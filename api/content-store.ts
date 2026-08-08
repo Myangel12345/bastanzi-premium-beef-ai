@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { createClient } from '@supabase/supabase-js';
 import {
   ShareTier,
   ManagedPhoto,
@@ -9,6 +10,32 @@ import {
   ContentStoreState,
   PhotoCategoryKey,
 } from '../src/types';
+
+const getEnv = (key: string): string => {
+  return (process.env[key] || process.env[`VITE_${key}`] || '').trim();
+};
+
+const supabaseUrl = getEnv('SUPABASE_URL') || getEnv('VITE_SUPABASE_URL');
+const supabaseKey = getEnv('SUPABASE_ANON_KEY') || getEnv('VITE_SUPABASE_ANON_KEY');
+
+const isHttpUrl = (url: string) => {
+  try {
+    return /^https?:\/\//i.test(url);
+  } catch {
+    return false;
+  }
+};
+
+const supabase = (supabaseUrl && isHttpUrl(supabaseUrl) && supabaseKey && supabaseKey.length > 10)
+  ? (() => {
+      try {
+        return createClient(supabaseUrl, supabaseKey);
+      } catch (err) {
+        console.warn('Failed to initialize Supabase client in api/content-store.ts:', err);
+        return null;
+      }
+    })()
+  : null;
 
 const STORE_PATH = path.join('/tmp', 'bastanzi_content.json');
 
@@ -337,6 +364,91 @@ export function persistContentStore(): void {
   }
 }
 
+export async function loadContentStoreFromSupabase(): Promise<ContentStoreState | null> {
+  if (!supabase) return null;
+  try {
+    const { data: storeRow, error: storeErr } = await supabase
+      .from('content_store')
+      .select('data')
+      .eq('id', 'main')
+      .maybeSingle();
+
+    let fetchedStore: ContentStoreState | null = null;
+    if (!storeErr && storeRow?.data) {
+      fetchedStore = storeRow.data as ContentStoreState;
+    }
+
+    const { data: photoRows, error: photoErr } = await supabase
+      .from('photos')
+      .select('*')
+      .order('updated_at', { ascending: false });
+
+    let fetchedPhotos: ManagedPhoto[] | null = null;
+    if (!photoErr && photoRows && photoRows.length > 0) {
+      fetchedPhotos = photoRows.map((item: any) => ({
+        id: item.id,
+        title: item.title,
+        category: item.category,
+        categoryLabel: item.category_label || item.category,
+        imageUrl: item.image_url || item.imageUrl,
+        description: item.description || '',
+        updatedAt: item.updated_at || item.updatedAt || new Date().toISOString(),
+        targetSection: item.target_section || item.targetSection || 'gallery',
+      }));
+    }
+
+    if (fetchedStore || fetchedPhotos) {
+      const baseStore = fetchedStore || loadContentStore();
+      const finalPhotos = fetchedPhotos || baseStore.photos;
+
+      inMemoryState = {
+        ...baseStore,
+        photos: finalPhotos,
+        lastUpdated: new Date().toISOString(),
+      };
+      persistContentStore();
+      return inMemoryState;
+    }
+  } catch (err) {
+    console.warn('[ContentStore] Supabase async load exception:', err);
+  }
+  return null;
+}
+
+export async function saveContentStoreToSupabase(store: ContentStoreState): Promise<void> {
+  if (!supabase) return;
+  try {
+    await supabase.from('content_store').upsert(
+      {
+        id: 'main',
+        data: store,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'id' }
+    );
+
+    if (store.photos && Array.isArray(store.photos)) {
+      for (const p of store.photos) {
+        await supabase.from('photos').upsert(
+          {
+            id: p.id,
+            title: p.title,
+            category: p.category,
+            category_label: p.categoryLabel,
+            image_url: p.imageUrl,
+            description: p.description,
+            target_section: p.targetSection,
+            updated_at: p.updatedAt || new Date().toISOString(),
+          },
+          { onConflict: 'id' }
+        );
+      }
+    }
+  } catch (err) {
+    console.warn('[ContentStore] Supabase save exception:', err);
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -347,6 +459,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (req.method === 'GET') {
+    if (supabase) {
+      await loadContentStoreFromSupabase();
+    }
     const store = loadContentStore();
     return res.status(200).json(store);
   }
@@ -361,11 +476,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     try {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+      if (supabase) {
+        await loadContentStoreFromSupabase();
+      }
       const store = loadContentStore();
 
       if (body.action === 'update_share_tiers') {
         if (Array.isArray(body.shareTiers)) {
-          // Log price history changes
           for (const newTier of body.shareTiers as ShareTier[]) {
             const oldTier = store.shareTiers.find((t) => t.id === newTier.id);
             if (oldTier && (oldTier.minPrice !== newTier.minPrice || oldTier.maxPrice !== newTier.maxPrice || oldTier.depositAmount !== newTier.depositAmount)) {
@@ -435,6 +552,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (body.action === 'delete_photo') {
         if (body.photoId) {
           store.photos = store.photos.filter((p) => p.id !== body.photoId);
+          if (supabase) {
+            await supabase.from('photos').delete().eq('id', body.photoId);
+          }
         }
       }
 
@@ -442,7 +562,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (body.photoId && body.newImageUrl) {
           const found = store.photos.find((p) => p.id === body.photoId);
           if (found) {
-            found.imageUrl = body.newImageUrl;
+            // Append cache busting timestamp if not already present
+            const finalUrl = body.newImageUrl.includes('v=')
+              ? body.newImageUrl
+              : (body.newImageUrl.includes('?') ? `${body.newImageUrl}&v=${Date.now()}` : `${body.newImageUrl}?v=${Date.now()}`);
+
+            found.imageUrl = finalUrl;
             if (body.title) found.title = body.title;
             if (body.category) {
               found.category = body.category;
@@ -455,6 +580,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       persistContentStore();
+      if (supabase) {
+        await saveContentStoreToSupabase(store);
+      }
       return res.status(200).json({ success: true, store });
     } catch (err: any) {
       console.error('[ContentStoreHandler] Error:', err);

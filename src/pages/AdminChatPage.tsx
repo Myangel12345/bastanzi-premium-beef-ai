@@ -22,6 +22,45 @@ import {
 } from 'lucide-react';
 import { ChatConversation, ChatMessage, ConversationStatus } from '../types';
 
+function deduplicateMessages(messages: ChatMessage[]): ChatMessage[] {
+  if (!Array.isArray(messages)) return [];
+
+  const seenIds = new Set<string>();
+  const seenRoleText = new Set<string>();
+  const result: ChatMessage[] = [];
+
+  for (const msg of messages) {
+    if (!msg || typeof msg !== 'object') continue;
+
+    const id = (msg.id || '').trim();
+    const sender = (msg.sender || 'user').trim();
+    const text = (msg.text || '').trim();
+
+    if (!text || text === 'TEMPORARY_ERROR') continue;
+
+    if (id && seenIds.has(id)) {
+      continue;
+    }
+
+    const signature = `${sender}::${text}`;
+    if (seenRoleText.has(signature)) {
+      continue;
+    }
+
+    if (id) seenIds.add(id);
+    seenRoleText.add(signature);
+
+    result.push({
+      ...msg,
+      id: id || `msg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      sender: sender as any,
+      text,
+    });
+  }
+
+  return result;
+}
+
 export default function AdminChatPage() {
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -116,7 +155,10 @@ export default function AdminChatPage() {
     if (!selectedConvId || !conversations.length) return;
     const found = conversations.find((c) => c.id === selectedConvId);
     if (found) {
-      setActiveConv(found);
+      setActiveConv({
+        ...found,
+        messages: deduplicateMessages(found.messages),
+      });
     }
   }, [conversations, selectedConvId]);
 
@@ -130,7 +172,12 @@ export default function AdminChatPage() {
       const res = await fetch(`/api/chat-admin?status=${statusFilter}&token=bastanzi2026`);
       if (res.ok) {
         const data = await res.json();
-        setConversations(data.conversations || []);
+        const rawList: ChatConversation[] = data.conversations || [];
+        const cleanList = rawList.map((c) => ({
+          ...c,
+          messages: deduplicateMessages(c.messages || []),
+        }));
+        setConversations(cleanList);
       }
     } catch (err) {
       console.error('Failed to load conversations:', err);

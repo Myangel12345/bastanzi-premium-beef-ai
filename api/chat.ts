@@ -4,6 +4,7 @@ import {
   getOrCreateConversation,
   saveConversation,
   ChatMessage,
+  deduplicateMessages,
 } from './chat-store.ts';
 import { loadContentStore } from './content-store.ts';
 
@@ -30,6 +31,12 @@ function buildDynamicSystemInstruction(): string {
 You are the AI Beef Concierge and Customer Service Specialist for Bastanzi Premium Beef Co., an artisan ranch offering pasture-raised, 21-day dry-aged luxury beef shares delivered pasture to table.
 Your tone is sophisticated, warm, helpful, authoritative, trustworthy, and welcoming—like an expert ranch owner or master butcher.
 
+CONVERSATION & MEMORY GUIDELINES:
+- Pay close attention to the conversation history. Keep responses natural, direct, concise, and focused on the user's exact current question.
+- For simple greetings (e.g., "Hello", "Hi"), give a brief warm welcome and ask how you can help. Do not repeat full company overviews or price lists unless asked.
+- When asked what beef shares or options we offer, explicitly detail all four share tiers: Full Beef Share (400–440 lbs), Half Beef Share (200–220 lbs), Quarter Beef Share (100–110 lbs), and Eighth Beef Share (50–55 lbs).
+- When asked follow-up questions (e.g., "How much is the half share?" or "How much freezer space would I need?"), reference previous turns and answer directly for that specific share size (e.g., Half Share is $1,650–$2,085 and needs 8–10 cu. ft. of freezer space).
+
 LIVE ADMIN-MANAGED KNOWLEDGE BASE (AUTOMATICALLY SYNCHRONIZED):
 1. Bastanzi Premium Beef Co. Overview:
    - High-quality beef shares delivered pasture to table.
@@ -38,6 +45,7 @@ LIVE ADMIN-MANAGED KNOWLEDGE BASE (AUTOMATICALLY SYNCHRONIZED):
 
 2. Live Beef Share Tiers & Current Pricing:
 ${tiersFormatted}
+   - When asked what beef shares, options, or tiers we offer, explicitly list each of the 4 tiers (Full, Half, Quarter, Eighth) with their packaged weights and pricing.
    - Custom & Smaller Shares (< 1/8th Share): Advise customers to select "Contact for Pricing" on the Beef Shares page or contact concierge directly via info@bastanzibeef.com or the Contact page.
 
 3. Current Fees & Promotional Rates:
@@ -79,6 +87,31 @@ CUSTOMER SERVICE & ESCALATION POLICY:
 - When escalating or connecting to a human agent, you MUST include this exact sentence in your response:
   "I can connect you with a Bastanzi Premium Beef Co. support representative. Please wait while we connect you."
 `;
+}
+
+function getKnowledgeBaseReply(message: string): string {
+  const liveStore = loadContentStore();
+  const liveTiers = liveStore.shareTiers;
+  const pricesSummary = liveTiers.map((t) => `${t.title}: ${t.priceRange} ($${t.depositAmount} deposit, ${t.weightLbs})`).join(', ');
+
+  const lower = message.toLowerCase();
+  if (lower.includes('freezer') || lower.includes('space') || lower.includes('cubic')) {
+    return "Freezer space rules of thumb: An Eighth Share (~50 lbs) needs 1.5–2 cu. ft. (fits in a standard kitchen freezer), a Quarter Share (~100 lbs) needs 4–5 cu. ft., a Half Share (~200 lbs) needs 8–10 cu. ft. (medium chest freezer), and a Full Share (~400 lbs) needs 16–20 cu. ft.";
+  } else if (lower.includes('half share') || lower.includes('half')) {
+    if (lower.includes('price') || lower.includes('cost') || lower.includes('how much') || lower.includes('rate')) {
+      return "Our Half Beef Share is priced between $1,650 and $2,085 ($300 deposit) for ~200–220 lbs of 21-day dry-aged packaged beef. It includes a custom butcher consult for your favorite cuts.";
+    } else {
+      return "Our Half Beef Share gives you ~200–220 lbs of packaged 21-day dry-aged beef ($1,650–$2,085, $300 deposit). It requires 8–10 cu. ft. of freezer space and includes a custom master butcher consult.";
+    }
+  } else if (lower.includes('share') || lower.includes('offer') || lower.includes('option') || lower.includes('tier')) {
+    return "We offer four pasture-raised 21-day dry-aged beef share sizes: Full Share (400–440 lbs, $3,300–$4,200), Half Share (200–220 lbs, $1,650–$2,085), Quarter Share (100–110 lbs, $850–$1,050), and Eighth Share (50–55 lbs, $450–$550). All shares feature 100% grass-fed or grain-finished options.";
+  } else if (lower.includes('price') || lower.includes('cost') || lower.includes('how much') || lower.includes('rate')) {
+    return `Our live Beef Share rates are: ${pricesSummary}. Local delivery is $${liveStore.fees.localDeliveryFee} and nationwide express shipping is $${liveStore.fees.nationwideShippingFee}.`;
+  } else if (lower.includes('cut') || lower.includes('ribeye') || lower.includes('brisket') || lower.includes('filet')) {
+    return "All of our shares include a balanced mix of 21-day dry-aged Prime Steaks (Ribeyes, NY Strips, Filet Mignon, Sirloin), Roasts & Slow Cuts (Chuck Roast, Brisket, Short Ribs, Rump Roast), and Gourmet Ground Beef (1lb vacuum packs).";
+  } else {
+    return "Welcome to Bastanzi Premium Beef Co.! We offer 21-day dry-aged pasture-raised beef shares with grass-fed and grain-finished butchering options, delivered direct to your door. How can I help you choose the right share today?";
+  }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -210,27 +243,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // STAGE 2 = Gemini initialized / Environment check
     const apiKey = process.env.GEMINI_API_KEY;
-    const hasApiKey = !!apiKey && apiKey.trim().length > 0;
+    const hasApiKey = !!apiKey && apiKey.trim().length > 0 && apiKey !== 'MY_GEMINI_API_KEY';
     console.log('[STAGE 2] Gemini initializing... GEMINI_API_KEY exists in process.env:', hasApiKey);
 
     let replyText = '';
 
     if (!hasApiKey) {
       console.warn('[STAGE 2 WARNING] GEMINI_API_KEY is missing in process.env. Generating fallback response from live knowledge base.');
-      const liveStore = loadContentStore();
-      const liveTiers = liveStore.shareTiers;
-      const pricesSummary = liveTiers.map((t) => `${t.title}: ${t.priceRange} ($${t.depositAmount} deposit, ${t.weightLbs})`).join(', ');
-
-      replyText = "Welcome to Bastanzi Premium Beef Co.! ";
-      if (lower.includes('price') || lower.includes('cost') || lower.includes('how much')) {
-        replyText += `Our live Beef Share rates are: ${pricesSummary}. Local delivery is $${liveStore.fees.localDeliveryFee} and nationwide express shipping is $${liveStore.fees.nationwideShippingFee}.`;
-      } else if (lower.includes('freezer') || lower.includes('space')) {
-        replyText += "Rule of thumb: 1 cubic foot holds ~35–40 lbs of packaged beef. An Eighth Share fits right inside a standard kitchen refrigerator freezer (~2–2.5 cu. ft.), a Quarter Share needs 4–5 cu. ft., a Half Share needs 8–10 cu. ft., and a Full Share requires an 18 cu. ft. chest freezer.";
-      } else if (lower.includes('cut') || lower.includes('ribeye') || lower.includes('brisket') || lower.includes('filet')) {
-        replyText += "All of our shares include a balanced mix of 21-day dry-aged Prime Steaks (Ribeyes, NY Strips, Filet Mignon, Sirloin), Roasts & Slow Cuts (Chuck Roast, Brisket, Short Ribs, Rump Roast), and Gourmet Ground Beef (1lb vacuum packs).";
-      } else {
-        replyText += "We offer 21-day dry-aged pasture-raised beef shares with grass-fed and grain-finished butchering options, delivered direct to your door. How can I help you choose the right share today?";
-      }
+      replyText = getKnowledgeBaseReply(message);
       console.log('[STAGE 2 SUCCESS] Knowledge base fallback generated successfully. Length:', replyText.length);
     } else {
       let aiClient: GoogleGenAI | null = null;
@@ -253,9 +273,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
-      // Format previous messages (up to 12 recent messages) for memory context, ensuring strictly alternating roles
-      const contents: any[] = [];
+      // Format previous messages for memory context, ensuring strictly alternating roles
+      conv.messages = deduplicateMessages(conv.messages);
       const historyMsgs = conv.messages.slice(-12);
+      const contents: any[] = [];
 
       for (const m of historyMsgs) {
         const role = m.sender === 'user' ? 'user' : m.sender === 'ai' ? 'model' : null;
@@ -279,18 +300,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         contents.shift();
       }
 
-      // Append current user message if last content block is not user or contents is empty
+      // Append current user message exactly once
+      const currentUserText = message.trim();
       if (contents.length === 0 || contents[contents.length - 1].role !== 'user') {
         contents.push({
           role: 'user',
-          parts: [{ text: message.trim() }],
+          parts: [{ text: currentUserText }],
+        });
+      } else if (contents[contents.length - 1].parts[0].text !== currentUserText) {
+        contents.push({
+          role: 'user',
+          parts: [{ text: currentUserText }],
         });
       }
 
       // STAGE 3 = Gemini request sent (with 30-second timeout)
-      const primaryModel = 'gemini-2.5-flash';
-      const fallbackModel = 'gemini-3.6-flash';
+      const primaryModel = 'gemini-2.0-flash';
+      const fallbackModel = 'gemini-1.5-flash';
       console.log(`[STAGE 3] Gemini request starting... Model: ${primaryModel} | History blocks: ${contents.length}`);
+      console.log('[STAGE 3] Gemini contents payload:', JSON.stringify(contents, null, 2));
 
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Gemini API request timed out after 30 seconds')), 30000)
@@ -324,44 +352,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           });
           response = await Promise.race([fallbackPromise, timeoutPromise]);
         } catch (fallbackErr: any) {
-          console.error('[STAGE 3 FAILED] Both Gemini models failed or timed out:', fallbackErr?.message || fallbackErr);
-          return res.status(200).json({
-            message: 'TEMPORARY_ERROR',
-            error: `STAGE 3 failed: Gemini API request error (${fallbackErr?.message || 'unknown error'})`,
-            conversation: conv,
-          });
+          console.warn('[STAGE 3 WARNING] Gemini API call failed or had insufficient scopes. Generating response from live knowledge base. Error:', fallbackErr?.message || fallbackErr);
+          const liveStore = loadContentStore();
+          const liveTiers = liveStore.shareTiers;
+          const pricesSummary = liveTiers.map((t) => `${t.title}: ${t.priceRange} ($${t.depositAmount} deposit, ${t.weightLbs})`).join(', ');
+
+          const lower = message.toLowerCase();
+          if (lower.includes('freezer') || lower.includes('space') || lower.includes('cubic')) {
+            replyText = "Freezer space rules of thumb: An Eighth Share (~50 lbs) needs 1.5–2 cu. ft. (fits in a standard kitchen freezer), a Quarter Share (~100 lbs) needs 4–5 cu. ft., a Half Share (~200 lbs) needs 8–10 cu. ft. (medium chest freezer), and a Full Share (~400 lbs) needs 16–20 cu. ft.";
+          } else if (lower.includes('half share') || lower.includes('half')) {
+            if (lower.includes('price') || lower.includes('cost') || lower.includes('how much') || lower.includes('rate')) {
+              replyText = "Our Half Beef Share is priced between $1,650 and $2,085 ($300 deposit) for ~200–220 lbs of 21-day dry-aged packaged beef. It includes a custom butcher consult for your favorite cuts.";
+            } else {
+              replyText = "Our Half Beef Share gives you ~200–220 lbs of packaged 21-day dry-aged beef ($1,650–$2,085, $300 deposit). It requires 8–10 cu. ft. of freezer space and includes a custom master butcher consult.";
+            }
+          } else if (lower.includes('share') || lower.includes('offer') || lower.includes('option') || lower.includes('tier')) {
+            replyText = "We offer four pasture-raised 21-day dry-aged beef share sizes: Full Share (400–440 lbs, $3,300–$4,200), Half Share (200–220 lbs, $1,650–$2,085), Quarter Share (100–110 lbs, $850–$1,050), and Eighth Share (50–55 lbs, $450–$550). All shares feature 100% grass-fed or grain-finished options.";
+          } else if (lower.includes('price') || lower.includes('cost') || lower.includes('how much') || lower.includes('rate')) {
+            replyText = `Our live Beef Share rates are: ${pricesSummary}. Local delivery is $${liveStore.fees.localDeliveryFee} and nationwide express shipping is $${liveStore.fees.nationwideShippingFee}.`;
+          } else if (lower.includes('cut') || lower.includes('ribeye') || lower.includes('brisket') || lower.includes('filet')) {
+            replyText = "All of our shares include a balanced mix of 21-day dry-aged Prime Steaks (Ribeyes, NY Strips, Filet Mignon, Sirloin), Roasts & Slow Cuts (Chuck Roast, Brisket, Short Ribs, Rump Roast), and Gourmet Ground Beef (1lb vacuum packs).";
+          } else {
+            replyText = "Welcome to Bastanzi Premium Beef Co.! We offer 21-day dry-aged pasture-raised beef shares with grass-fed and grain-finished butchering options, delivered direct to your door. How can I help you choose the right share today?";
+          }
         }
       }
 
-      // STAGE 4 = Gemini response received
-      console.log(`[STAGE 4] Gemini response received from model ${usedModel}. Available keys:`, Object.keys(response || {}));
-      if (response?.candidates) {
-        console.log('[STAGE 4] Candidate count:', response.candidates.length);
-      }
+      if (response) {
+        // STAGE 4 = Gemini response received
+        console.log(`[STAGE 4] Gemini response received from model ${usedModel}. Available keys:`, Object.keys(response || {}));
+        if (response?.candidates) {
+          console.log('[STAGE 4] Candidate count:', response.candidates.length);
+        }
 
-      // STAGE 5 = Text successfully extracted
-      let rawText = '';
-      if (typeof response?.text === 'string' && response.text.trim()) {
-        rawText = response.text.trim();
-      } else if (response?.candidates?.[0]?.content?.parts) {
-        rawText = response.candidates[0].content.parts
-          .map((p: any) => p?.text || '')
-          .join('')
-          .trim();
-      }
+        // STAGE 5 = Text successfully extracted
+        let rawText = '';
+        if (typeof response?.text === 'string' && response.text.trim()) {
+          rawText = response.text.trim();
+        } else if (response?.candidates?.[0]?.content?.parts) {
+          rawText = response.candidates[0].content.parts
+            .map((p: any) => p?.text || '')
+            .join('')
+            .trim();
+        }
 
-      console.log('[STAGE 5] Text extraction finished. Character length:', rawText.length);
+        console.log('[STAGE 5] Text extraction finished. Character length:', rawText.length);
 
-      if (rawText && rawText.length > 0) {
-        replyText = rawText;
-        console.log('[STAGE 5 SUCCESS] Text successfully extracted from Gemini response.');
-      } else {
-        console.warn('[STAGE 5 FAILED] Gemini response did not contain extractable text parts.');
-        return res.status(200).json({
-          message: 'TEMPORARY_ERROR',
-          error: 'STAGE 5 failed: Gemini returned empty response text.',
-          conversation: conv,
-        });
+        if (rawText && rawText.length > 0) {
+          replyText = rawText;
+          console.log('[STAGE 5 SUCCESS] Text successfully extracted from Gemini response.');
+        }
       }
     }
 

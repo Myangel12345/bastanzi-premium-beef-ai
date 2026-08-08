@@ -16,6 +16,45 @@ const SUGGESTED_QUESTIONS = [
   "How does local Arizona delivery and nationwide shipping work?",
 ];
 
+function deduplicateMessages(messages: ChatMessage[]): ChatMessage[] {
+  if (!Array.isArray(messages)) return [];
+
+  const seenIds = new Set<string>();
+  const seenRoleText = new Set<string>();
+  const result: ChatMessage[] = [];
+
+  for (const msg of messages) {
+    if (!msg || typeof msg !== 'object') continue;
+
+    const id = (msg.id || '').trim();
+    const sender = (msg.sender || 'user').trim();
+    const text = (msg.text || '').trim();
+
+    if (!text || text === 'TEMPORARY_ERROR') continue;
+
+    if (id && seenIds.has(id)) {
+      continue;
+    }
+
+    const signature = `${sender}::${text}`;
+    if (seenRoleText.has(signature)) {
+      continue;
+    }
+
+    if (id) seenIds.add(id);
+    seenRoleText.add(signature);
+
+    result.push({
+      ...msg,
+      id: id || `msg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      sender: sender as any,
+      text,
+    });
+  }
+
+  return result;
+}
+
 export default function BeefConciergeChat({
   onNavigateToReservation,
   onNavigateToContact,
@@ -43,7 +82,7 @@ export default function BeefConciergeChat({
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Initialize or load conversationId from localStorage
+  // Initialize or load conversationId and cached conversation from localStorage
   useEffect(() => {
     let convId = localStorage.getItem('bastanzi_chat_conversation_id');
     if (!convId) {
@@ -51,6 +90,21 @@ export default function BeefConciergeChat({
       localStorage.setItem('bastanzi_chat_conversation_id', convId);
     }
     setConversationId(convId);
+
+    // Load local cached conversation state if present
+    try {
+      const cachedStr = localStorage.getItem('bastanzi_chat_conversation_cache');
+      if (cachedStr) {
+        const parsed = JSON.parse(cachedStr);
+        if (parsed && Array.isArray(parsed.messages) && parsed.messages.length > 0) {
+          parsed.messages = deduplicateMessages(parsed.messages);
+          setConversation(parsed);
+        }
+      }
+    } catch (e) {
+      // Ignore cache parse error
+    }
+
     fetchConversationState(convId);
   }, []);
 
@@ -59,21 +113,35 @@ export default function BeefConciergeChat({
     if (!conversationId) return;
 
     const interval = setInterval(() => {
-      if (isOpen || conversation?.status === 'human_handled' || conversation?.status === 'escalated') {
+      if (!loading && (isOpen || conversation?.status === 'human_handled' || conversation?.status === 'escalated')) {
         fetchConversationState(conversationId);
       }
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [conversationId, isOpen, conversation?.status]);
+  }, [conversationId, isOpen, conversation?.status, loading]);
 
   const fetchConversationState = async (id: string) => {
+    if (loading) return; // Prevent overwriting state while waiting for AI response
     try {
       const res = await fetch(`/api/chat?conversationId=${encodeURIComponent(id)}`);
       if (res.ok) {
         const data = await res.json();
-        if (data.conversation) {
-          setConversation(data.conversation);
+        if (data.conversation && Array.isArray(data.conversation.messages) && data.conversation.messages.length > 0) {
+          setConversation((prev) => {
+            const prevMsgs = prev?.messages || [];
+            const serverMsgs = data.conversation?.messages || [];
+            const mergedMsgs = deduplicateMessages([...prevMsgs, ...serverMsgs]);
+            const updated: ChatConversation = {
+              ...(prev || {}),
+              ...data.conversation,
+              messages: mergedMsgs,
+            };
+            try {
+              localStorage.setItem('bastanzi_chat_conversation_cache', JSON.stringify(updated));
+            } catch (e) {}
+            return updated;
+          });
         }
       }
     } catch (err) {
@@ -102,7 +170,7 @@ export default function BeefConciergeChat({
     const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const nowIso = new Date().toISOString();
     const tempUserMsg: ChatMessage = {
-      id: 'temp_' + Date.now(),
+      id: 'usr_' + Date.now(),
       sender: 'user',
       text,
       timestamp: nowTime,
@@ -110,11 +178,23 @@ export default function BeefConciergeChat({
     };
 
     setConversation((prev) => {
-      if (!prev) return null;
-      return {
+      const baseMsgs = prev?.messages || [];
+      const updatedMsgs = deduplicateMessages([...baseMsgs, tempUserMsg]);
+      const updatedConv: ChatConversation = {
+        id: conversationId,
+        createdAt: prev?.createdAt || nowIso,
+        updatedAt: nowIso,
+        status: prev?.status || 'ai_handled',
+        lastMessage: text,
+        unreadAdmin: prev?.unreadAdmin || false,
+        unreadCustomer: prev?.unreadCustomer || false,
         ...prev,
-        messages: [...prev.messages, tempUserMsg],
+        messages: updatedMsgs,
       };
+      try {
+        localStorage.setItem('bastanzi_chat_conversation_cache', JSON.stringify(updatedConv));
+      } catch (e) {}
+      return updatedConv;
     });
 
     try {
@@ -144,59 +224,71 @@ export default function BeefConciergeChat({
       }
 
       const aiResponseText = rawResponseText;
+      const respTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const respIso = new Date().toISOString();
 
-      if (data.conversation && Array.isArray(data.conversation.messages)) {
-        // Ensure the last message in data.conversation is from AI and has non-empty text
-        const lastMsg = data.conversation.messages[data.conversation.messages.length - 1];
-        if (!lastMsg || lastMsg.sender === 'user' || !lastMsg.text || !lastMsg.text.trim() || lastMsg.text === 'TEMPORARY_ERROR') {
-          const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          const nowIso = new Date().toISOString();
-          // Filter out any broken TEMPORARY_ERROR messages from history
-          data.conversation.messages = data.conversation.messages.filter((m: any) => m.text !== 'TEMPORARY_ERROR');
-          data.conversation.messages.push({
-            id: 'ai_' + Date.now(),
-            sender: 'ai',
-            text: aiResponseText,
-            timestamp: nowTime,
-            createdAt: nowIso,
-          });
-        }
-        setConversation(data.conversation);
-      } else {
-        const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const nowIso = new Date().toISOString();
-        const aiReplyMsg: ChatMessage = {
-          id: 'ai_' + Date.now(),
-          sender: 'ai',
-          text: aiResponseText,
-          timestamp: nowTime,
-          createdAt: nowIso,
+      const newAssistantMessage: ChatMessage = {
+        id: 'ai_' + Date.now(),
+        sender: 'ai',
+        text: aiResponseText,
+        timestamp: respTime,
+        createdAt: respIso,
+      };
+
+      setConversation((prev) => {
+        const serverConv = data.conversation;
+        const serverMsgs = serverConv?.messages || [];
+        const prevMsgs = prev?.messages || [tempUserMsg];
+        const combined = deduplicateMessages([...prevMsgs, ...serverMsgs, newAssistantMessage]);
+
+        const finalConv: ChatConversation = {
+          id: conversationId,
+          createdAt: prev?.createdAt || respIso,
+          updatedAt: respIso,
+          status: serverConv?.status || prev?.status || 'ai_handled',
+          lastMessage: aiResponseText,
+          unreadAdmin: false,
+          unreadCustomer: false,
+          ...prev,
+          ...(serverConv || {}),
+          messages: combined,
         };
-        setConversation((prev) => {
-          if (!prev) return null;
-          return {
-            ...prev,
-            messages: [...prev.messages, aiReplyMsg],
-          };
-        });
-      }
+
+        try {
+          localStorage.setItem('bastanzi_chat_conversation_cache', JSON.stringify(finalConv));
+        } catch (e) {}
+
+        return finalConv;
+      });
     } catch (err) {
       console.error('Chat error:', err);
-      const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const nowIso = new Date().toISOString();
+      const errTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const errIso = new Date().toISOString();
       const errAiMsg: ChatMessage = {
         id: 'err_' + Date.now(),
         sender: 'ai',
         text: "Sorry, I’m temporarily unable to answer right now. Please try again.",
-        timestamp: nowTime,
-        createdAt: nowIso,
+        timestamp: errTime,
+        createdAt: errIso,
       };
       setConversation((prev) => {
-        if (!prev) return null;
-        return {
+        const baseMsgs = prev?.messages || [tempUserMsg];
+        const updatedMsgs = deduplicateMessages([...baseMsgs, errAiMsg]);
+        const finalConv: ChatConversation = {
+          id: conversationId,
+          createdAt: prev?.createdAt || errIso,
+          updatedAt: errIso,
+          status: prev?.status || 'ai_handled',
+          lastMessage: errAiMsg.text,
+          unreadAdmin: false,
+          unreadCustomer: false,
           ...prev,
-          messages: [...prev.messages, errAiMsg],
+          messages: updatedMsgs,
         };
+        try {
+          localStorage.setItem('bastanzi_chat_conversation_cache', JSON.stringify(finalConv));
+        } catch (e) {}
+        return finalConv;
       });
     } finally {
       setLoading(false);
