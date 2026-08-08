@@ -112,11 +112,16 @@ export default function BeefConciergeChat({
       });
 
       const data = await res.json();
+      console.log('[BeefConciergeChat] API response received from /api/chat:', data);
+
       const aiResponseText =
-        data.message ||
-        data.reply ||
-        (data.conversation?.lastMessage) ||
-        "Sorry, I’m temporarily unable to answer right now. Please try again.";
+        (typeof data?.message === 'string' && data.message.trim())
+          ? data.message.trim()
+          : (typeof data?.reply === 'string' && data.reply.trim())
+          ? data.reply.trim()
+          : (typeof data?.conversation?.lastMessage === 'string' && data.conversation.lastMessage.trim())
+          ? data.conversation.lastMessage.trim()
+          : "Sorry, I’m temporarily unable to answer right now. Please try again.";
 
       if (data.conversation && Array.isArray(data.conversation.messages)) {
         // Ensure the last message in data.conversation is from AI and has non-empty text

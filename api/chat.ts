@@ -114,8 +114,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
     const { message, conversationId: reqConvId, customerName, customerEmail } = body;
 
-    if (!message || typeof message !== 'string') {
-      return res.status(400).json({ error: 'Message is required.' });
+    console.log('[Chat API] Incoming user message:', message, '| convId:', reqConvId);
+
+    if (!message || typeof message !== 'string' || !message.trim()) {
+      console.warn('[Chat API] Empty or invalid user message received.');
+      return res.status(400).json({
+        message: 'Message is required.',
+        error: 'Message is required.',
+      });
     }
 
     const conversationId = reqConvId || 'conv_' + Date.now();
@@ -124,22 +130,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const nowIso = new Date().toISOString();
     const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    // Append user message
-    const userMsg: ChatMessage = {
-      id: 'usr_' + Date.now(),
-      sender: 'user',
-      text: message.trim(),
-      timestamp: nowTime,
-      createdAt: nowIso,
-    };
-    conv.messages.push(userMsg);
-    conv.lastMessage = userMsg.text;
-
     // Check if human agent is currently handling this conversation
     if (conv.status === 'human_handled') {
+      const userMsg: ChatMessage = {
+        id: 'usr_' + Date.now(),
+        sender: 'user',
+        text: message.trim(),
+        timestamp: nowTime,
+        createdAt: nowIso,
+      };
+      conv.messages.push(userMsg);
+      conv.lastMessage = userMsg.text;
       conv.unreadAdmin = true;
       saveConversation(conv);
+
+      const humanHandledReply = "A customer service representative is currently handling your chat and will respond shortly.";
+      console.log('[Chat API] Chat handled by human agent. Returning message:', humanHandledReply);
       return res.status(200).json({
+        message: humanHandledReply,
+        reply: humanHandledReply,
         conversation: conv,
         replyHandledByHuman: true,
       });
@@ -167,7 +176,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       conv.status = 'escalated';
       conv.unreadAdmin = true;
       const escalationReply = "I can connect you with a Bastanzi Premium Beef Co. support representative. Please wait while we connect you.";
-      
+
+      const userMsg: ChatMessage = {
+        id: 'usr_' + Date.now(),
+        sender: 'user',
+        text: message.trim(),
+        timestamp: nowTime,
+        createdAt: nowIso,
+      };
+      conv.messages.push(userMsg);
+
       const aiMsg: ChatMessage = {
         id: 'ai_' + Date.now(),
         sender: 'ai',
@@ -179,6 +197,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       conv.lastMessage = escalationReply;
       saveConversation(conv);
 
+      console.log('[Chat API] Explicit escalation triggered. Returning message:', escalationReply);
       return res.status(200).json({
         message: escalationReply,
         reply: escalationReply,
@@ -186,8 +205,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Call Gemini API for smart concierge response with conversation memory
+    // STEP 1: Log GEMINI_API_KEY existence
     const apiKey = process.env.GEMINI_API_KEY;
+    console.log('[Chat API] GEMINI_API_KEY exists in process.env:', !!apiKey);
 
     let replyText = '';
 
@@ -239,20 +259,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
         }
 
-        // CRITICAL FIX: Gemini API requires contents[0].role to be 'user'
+        // Gemini API requires contents[0].role to be 'user'
         while (contents.length > 0 && contents[0].role === 'model') {
           contents.shift();
         }
 
-        // Ensure contents is non-empty and has at least the current user message
-        if (contents.length === 0) {
+        // Append current message if last content is not user or contents is empty
+        if (contents.length === 0 || contents[contents.length - 1].role !== 'user') {
           contents.push({
             role: 'user',
             parts: [{ text: message.trim() }],
           });
         }
 
-        console.log(`[Chat API] Invoking Gemini API (gemini-3.6-flash) with ${contents.length} message history blocks...`);
+        console.log(`[Chat API] Invoking Gemini API (gemini-3.6-flash) with ${contents.length} history blocks...`);
         const response = await ai.models.generateContent({
           model: 'gemini-3.6-flash',
           contents,
@@ -262,6 +282,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           },
         });
 
+        // STEP 2: Log exact Gemini response object structure
+        try {
+          console.log('[Chat API] Gemini response object structure:', JSON.stringify(response, null, 2));
+        } catch (jsonErr) {
+          console.log('[Chat API] Gemini raw response object:', response);
+        }
+
+        // STEP 3: Extract response text
         let rawText = '';
         if (typeof response?.text === 'string' && response.text.trim()) {
           rawText = response.text.trim();
@@ -272,24 +300,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             .trim();
         }
 
-        console.log('[Chat API] Gemini API response received. Character length:', rawText.length);
+        console.log('[Chat API] Extracted Gemini raw text length:', rawText.length);
 
         if (rawText) {
           replyText = rawText;
         } else {
           console.warn('[Chat API] Gemini returned an empty or whitespace text response.');
-          replyText = "Sorry, I’m temporarily unable to answer right now. Please try again.";
+          replyText = "DEBUG: Gemini returned no text. Check server logs.";
         }
       } catch (geminiErr: any) {
-        console.error('[Chat API] Gemini API execution failed:', geminiErr?.stack || geminiErr?.message || geminiErr);
+        console.error('[Chat API] Gemini API call threw an exception:', geminiErr?.stack || geminiErr?.message || geminiErr);
         replyText = "Sorry, I’m temporarily unable to answer right now. Please try again.";
       }
     }
 
     // Ensure replyText is never blank
     if (!replyText || !replyText.trim()) {
-      replyText = "Sorry, I’m temporarily unable to answer right now. Please try again.";
+      replyText = "DEBUG: Gemini returned no text. Check server logs.";
     }
+
+    // STEP 4: Log extracted response text before returning
+    console.log('[Chat API] Final extracted response text to return:', replyText);
+
+    // Save user message & AI reply message to conversation AFTER generating answer
+    const userMsg: ChatMessage = {
+      id: 'usr_' + Date.now(),
+      sender: 'user',
+      text: message.trim(),
+      timestamp: nowTime,
+      createdAt: nowIso,
+    };
+    conv.messages.push(userMsg);
 
     // Check if Gemini triggered escalation wording
     if (replyText.includes("I can connect you with a Bastanzi Premium Beef Co. support representative")) {
@@ -316,9 +357,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       conversation: conv,
     });
   } catch (err: any) {
-    console.error('[Chat API] Handler error caught:', err?.stack || err?.message || err);
+    console.error('[Chat API] Critical handler error caught:', err?.stack || err?.message || err);
     
-    // Always return a valid message field to prevent blank customer messages
     const fallbackMessage = "Sorry, I’m temporarily unable to answer right now. Please try again.";
     return res.status(200).json({
       message: fallbackMessage,
