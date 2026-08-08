@@ -205,14 +205,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // STEP 1: Log GEMINI_API_KEY existence
+    // STAGE 1 = Request received
+    console.log('[STAGE 1] Request received | Message:', message, '| convId:', reqConvId);
+
+    // STAGE 2 = Gemini initialized / Environment check
     const apiKey = process.env.GEMINI_API_KEY;
-    console.log('[Chat API] GEMINI_API_KEY exists in process.env:', !!apiKey);
+    const hasApiKey = !!apiKey && apiKey.trim().length > 0;
+    console.log('[STAGE 2] Gemini initializing... GEMINI_API_KEY exists in process.env:', hasApiKey);
 
     let replyText = '';
 
-    if (!apiKey) {
-      console.warn('[Chat API] GEMINI_API_KEY is missing in process.env. Generating fallback response from live knowledge base.');
+    if (!hasApiKey) {
+      console.warn('[STAGE 2 WARNING] GEMINI_API_KEY is missing in process.env. Generating fallback response from live knowledge base.');
       const liveStore = loadContentStore();
       const liveTiers = liveStore.shareTiers;
       const pricesSummary = liveTiers.map((t) => `${t.title}: ${t.priceRange} ($${t.depositAmount} deposit, ${t.weightLbs})`).join(', ');
@@ -227,9 +231,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       } else {
         replyText += "We offer 21-day dry-aged pasture-raised beef shares with grass-fed and grain-finished butchering options, delivered direct to your door. How can I help you choose the right share today?";
       }
+      console.log('[STAGE 2 SUCCESS] Knowledge base fallback generated successfully. Length:', replyText.length);
     } else {
+      let aiClient: GoogleGenAI | null = null;
       try {
-        const ai = new GoogleGenAI({
+        aiClient = new GoogleGenAI({
           apiKey,
           httpOptions: {
             headers: {
@@ -237,44 +243,65 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             },
           },
         });
+        console.log('[STAGE 2 SUCCESS] @google/genai client initialized successfully.');
+      } catch (initErr: any) {
+        console.error('[STAGE 2 FAILED] @google/genai client initialization exception:', initErr?.message || initErr);
+        return res.status(200).json({
+          message: 'TEMPORARY_ERROR',
+          error: `STAGE 2 failed: Gemini initialization error (${initErr?.message || 'unknown'})`,
+          conversation: conv,
+        });
+      }
 
-        // Format previous messages (up to 12 recent messages) for memory context, ensuring strictly alternating roles
-        const contents: any[] = [];
-        const historyMsgs = conv.messages.slice(-12);
+      // Format previous messages (up to 12 recent messages) for memory context, ensuring strictly alternating roles
+      const contents: any[] = [];
+      const historyMsgs = conv.messages.slice(-12);
 
-        for (const m of historyMsgs) {
-          const role = m.sender === 'user' ? 'user' : m.sender === 'ai' ? 'model' : null;
-          if (!role) continue;
+      for (const m of historyMsgs) {
+        const role = m.sender === 'user' ? 'user' : m.sender === 'ai' ? 'model' : null;
+        if (!role) continue;
 
-          const text = (m.text || '').trim();
-          if (!text) continue;
+        const text = (m.text || '').trim();
+        if (!text) continue;
 
-          if (contents.length > 0 && contents[contents.length - 1].role === role) {
-            contents[contents.length - 1].parts[0].text += '\n\n' + text;
-          } else {
-            contents.push({
-              role,
-              parts: [{ text }],
-            });
-          }
-        }
-
-        // Gemini API requires contents[0].role to be 'user'
-        while (contents.length > 0 && contents[0].role === 'model') {
-          contents.shift();
-        }
-
-        // Append current message if last content is not user or contents is empty
-        if (contents.length === 0 || contents[contents.length - 1].role !== 'user') {
+        if (contents.length > 0 && contents[contents.length - 1].role === role) {
+          contents[contents.length - 1].parts[0].text += '\n\n' + text;
+        } else {
           contents.push({
-            role: 'user',
-            parts: [{ text: message.trim() }],
+            role,
+            parts: [{ text }],
           });
         }
+      }
 
-        console.log(`[Chat API] Invoking Gemini API (gemini-3.6-flash) with ${contents.length} history blocks...`);
-        const response = await ai.models.generateContent({
-          model: 'gemini-3.6-flash',
+      // Gemini API requires contents[0].role to be 'user'
+      while (contents.length > 0 && contents[0].role === 'model') {
+        contents.shift();
+      }
+
+      // Append current user message if last content block is not user or contents is empty
+      if (contents.length === 0 || contents[contents.length - 1].role !== 'user') {
+        contents.push({
+          role: 'user',
+          parts: [{ text: message.trim() }],
+        });
+      }
+
+      // STAGE 3 = Gemini request sent (with 30-second timeout)
+      const primaryModel = 'gemini-2.5-flash';
+      const fallbackModel = 'gemini-3.6-flash';
+      console.log(`[STAGE 3] Gemini request starting... Model: ${primaryModel} | History blocks: ${contents.length}`);
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Gemini API request timed out after 30 seconds')), 30000)
+      );
+
+      let response: any = null;
+      let usedModel = primaryModel;
+
+      try {
+        const geminiPromise = aiClient.models.generateContent({
+          model: primaryModel,
           contents,
           config: {
             systemInstruction: buildDynamicSystemInstruction(),
@@ -282,47 +309,73 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           },
         });
 
-        // STEP 2: Log exact Gemini response object structure
+        response = await Promise.race([geminiPromise, timeoutPromise]);
+      } catch (primaryErr: any) {
+        console.warn(`[STAGE 3 WARNING] Primary model ${primaryModel} failed (${primaryErr?.message}). Retrying with ${fallbackModel}...`);
+        usedModel = fallbackModel;
         try {
-          console.log('[Chat API] Gemini response object structure:', JSON.stringify(response, null, 2));
-        } catch (jsonErr) {
-          console.log('[Chat API] Gemini raw response object:', response);
+          const fallbackPromise = aiClient.models.generateContent({
+            model: fallbackModel,
+            contents,
+            config: {
+              systemInstruction: buildDynamicSystemInstruction(),
+              temperature: 0.7,
+            },
+          });
+          response = await Promise.race([fallbackPromise, timeoutPromise]);
+        } catch (fallbackErr: any) {
+          console.error('[STAGE 3 FAILED] Both Gemini models failed or timed out:', fallbackErr?.message || fallbackErr);
+          return res.status(200).json({
+            message: 'TEMPORARY_ERROR',
+            error: `STAGE 3 failed: Gemini API request error (${fallbackErr?.message || 'unknown error'})`,
+            conversation: conv,
+          });
         }
+      }
 
-        // STEP 3: Extract response text
-        let rawText = '';
-        if (typeof response?.text === 'string' && response.text.trim()) {
-          rawText = response.text.trim();
-        } else if (response?.candidates?.[0]?.content?.parts) {
-          rawText = response.candidates[0].content.parts
-            .map((p: any) => p?.text || '')
-            .join('')
-            .trim();
-        }
+      // STAGE 4 = Gemini response received
+      console.log(`[STAGE 4] Gemini response received from model ${usedModel}. Available keys:`, Object.keys(response || {}));
+      if (response?.candidates) {
+        console.log('[STAGE 4] Candidate count:', response.candidates.length);
+      }
 
-        console.log('[Chat API] Extracted Gemini raw text length:', rawText.length);
+      // STAGE 5 = Text successfully extracted
+      let rawText = '';
+      if (typeof response?.text === 'string' && response.text.trim()) {
+        rawText = response.text.trim();
+      } else if (response?.candidates?.[0]?.content?.parts) {
+        rawText = response.candidates[0].content.parts
+          .map((p: any) => p?.text || '')
+          .join('')
+          .trim();
+      }
 
-        if (rawText) {
-          replyText = rawText;
-        } else {
-          console.warn('[Chat API] Gemini returned an empty or whitespace text response.');
-          replyText = "DEBUG: Gemini returned no text. Check server logs.";
-        }
-      } catch (geminiErr: any) {
-        console.error('[Chat API] Gemini API call threw an exception:', geminiErr?.stack || geminiErr?.message || geminiErr);
-        replyText = "Sorry, I’m temporarily unable to answer right now. Please try again.";
+      console.log('[STAGE 5] Text extraction finished. Character length:', rawText.length);
+
+      if (rawText && rawText.length > 0) {
+        replyText = rawText;
+        console.log('[STAGE 5 SUCCESS] Text successfully extracted from Gemini response.');
+      } else {
+        console.warn('[STAGE 5 FAILED] Gemini response did not contain extractable text parts.');
+        return res.status(200).json({
+          message: 'TEMPORARY_ERROR',
+          error: 'STAGE 5 failed: Gemini returned empty response text.',
+          conversation: conv,
+        });
       }
     }
 
-    // Ensure replyText is never blank
-    if (!replyText || !replyText.trim()) {
-      replyText = "DEBUG: Gemini returned no text. Check server logs.";
+    if (!replyText || !replyText.trim() || replyText === 'TEMPORARY_ERROR') {
+      console.error('[STAGE 5 FAILED] Final reply text is empty or invalid.');
+      return res.status(200).json({
+        message: 'TEMPORARY_ERROR',
+        error: 'STAGE 5 failed: Extracted response text is empty.',
+        conversation: conv,
+      });
     }
 
-    // STEP 4: Log extracted response text before returning
-    console.log('[Chat API] Final extracted response text to return:', replyText);
-
-    // Save user message & AI reply message to conversation AFTER generating answer
+    // STAGE 6 = JSON response returned & conversation saved
+    // CRITICAL REQUIREMENT: Do NOT save conversation to chat-store.ts until AFTER a valid non-empty AI response has been generated!
     const userMsg: ChatMessage = {
       id: 'usr_' + Date.now(),
       sender: 'user',
@@ -350,6 +403,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     conv.messages.push(aiMsg);
     conv.lastMessage = replyText;
     saveConversation(conv);
+
+    console.log('[STAGE 6 SUCCESS] Non-empty AI response verified & conversation saved to store. Returning JSON response to client.');
 
     return res.status(200).json({
       message: replyText,

@@ -130,21 +130,29 @@ export default function BeefConciergeChat({
       const data = await res.json();
       console.log('[BeefConciergeChat] API response received from /api/chat:', data);
 
-      const aiResponseText =
+      let rawResponseText =
         (typeof data?.message === 'string' && data.message.trim())
           ? data.message.trim()
           : (typeof data?.reply === 'string' && data.reply.trim())
           ? data.reply.trim()
           : (typeof data?.conversation?.lastMessage === 'string' && data.conversation.lastMessage.trim())
           ? data.conversation.lastMessage.trim()
-          : "Sorry, I’m temporarily unable to answer right now. Please try again.";
+          : "TEMPORARY_ERROR";
+
+      if (rawResponseText === 'TEMPORARY_ERROR') {
+        rawResponseText = "Sorry, I’m temporarily unable to answer right now. Please try again.";
+      }
+
+      const aiResponseText = rawResponseText;
 
       if (data.conversation && Array.isArray(data.conversation.messages)) {
         // Ensure the last message in data.conversation is from AI and has non-empty text
         const lastMsg = data.conversation.messages[data.conversation.messages.length - 1];
-        if (!lastMsg || lastMsg.sender === 'user' || !lastMsg.text || !lastMsg.text.trim()) {
+        if (!lastMsg || lastMsg.sender === 'user' || !lastMsg.text || !lastMsg.text.trim() || lastMsg.text === 'TEMPORARY_ERROR') {
           const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           const nowIso = new Date().toISOString();
+          // Filter out any broken TEMPORARY_ERROR messages from history
+          data.conversation.messages = data.conversation.messages.filter((m: any) => m.text !== 'TEMPORARY_ERROR');
           data.conversation.messages.push({
             id: 'ai_' + Date.now(),
             sender: 'ai',
