@@ -2,6 +2,8 @@ export type ShareSize = 'Full' | 'Half' | 'Quarter' | 'Eighth';
 
 export type FinishOption = 'Grass-fed' | 'Grain-finished' | 'Mixed';
 
+export type ShareAvailabilityStatus = 'In Stock' | 'Limited Allocation' | 'Sold Out' | 'Pre-Order';
+
 export interface ShareTier {
   id: ShareSize;
   title: string;
@@ -17,6 +19,8 @@ export interface ShareTier {
   depositAmount: number;
   featured?: boolean;
   image?: string;
+  availabilityStatus?: ShareAvailabilityStatus;
+  availabilityNote?: string;
   cutSummary: {
     steaks: string[];
     roastsAndSlow: string[];
@@ -167,4 +171,62 @@ export interface ChatConversation {
   messages: ChatMessage[];
   associatedOrderId?: string;
 }
+
+export type PhotoCategoryKey =
+  | 'beef_cuts'
+  | 'ribeye'
+  | 'ny_strip'
+  | 'filet_mignon'
+  | 'brisket'
+  | 'chuck_roast'
+  | 'short_ribs'
+  | 'ground_beef'
+  | 'vacuum_packaging'
+  | 'ranch_cattle'
+  | 'butcher_processing'
+  | 'marketing';
+
+export interface ManagedPhoto {
+  id: string;
+  title: string;
+  category: PhotoCategoryKey;
+  categoryLabel: string;
+  imageUrl: string;
+  description: string;
+  updatedAt: string;
+  targetSection?: string; // e.g., 'hero', 'shares', 'gallery', 'about'
+}
+
+export interface FeeStructure {
+  processingFee: number;
+  processingFeeNote: string;
+  localDeliveryFee: number;
+  localDeliveryFeeNote: string;
+  nationwideShippingFee: number;
+  nationwideShippingFeeNote: string;
+  promotionalCode?: string;
+  promotionalDiscountPercent?: number;
+  promotionalDiscountAmount?: number;
+  promotionalBannerText?: string;
+  promotionalActive: boolean;
+}
+
+export interface PriceHistoryRecord {
+  id: string;
+  timestamp: string;
+  itemTitle: string;
+  oldPrice: string;
+  newPrice: string;
+  updatedBy: string;
+  notes?: string;
+}
+
+export interface ContentStoreState {
+  shareTiers: ShareTier[];
+  photos: ManagedPhoto[];
+  fees: FeeStructure;
+  priceHistory: PriceHistoryRecord[];
+  lastUpdated: string;
+}
+
 

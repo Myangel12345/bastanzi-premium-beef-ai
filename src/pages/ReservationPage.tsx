@@ -1,10 +1,11 @@
 import { useState, useEffect, FormEvent } from 'react';
 import confetti from 'canvas-confetti';
-import { BEEF_SHARE_TIERS, BRAND_IMAGES } from '../data/content';
+import { BRAND_IMAGES } from '../data/content';
+import { getClientContentStore, subscribeContentStore } from '../lib/contentStore';
 import { ShareSize, FinishOption, ReservationPayload } from '../types';
 import { saveReservationToDatabase } from '../lib/supabase';
 import { getActiveHarvestBatches } from '../lib/harvestBatches';
-import { Check, ShieldCheck, ArrowRight, ArrowLeft, CheckCircle2, Printer, AlertCircle, Home, Truck, Sparkles } from 'lucide-react';
+import { Check, ShieldCheck, ArrowRight, ArrowLeft, CheckCircle2, Printer, AlertCircle, Home, Truck, Sparkles, Tag } from 'lucide-react';
 import SeoHead from '../components/SeoHead';
 
 interface ReservationPageProps {
@@ -12,10 +13,21 @@ interface ReservationPageProps {
 }
 
 export default function ReservationPage({ initialShareSize }: ReservationPageProps) {
+  const [contentStore, setContentStore] = useState(getClientContentStore());
   const [step, setStep] = useState<number>(1);
   const [shareSize, setShareSize] = useState<ShareSize>(initialShareSize || 'Half');
   const [finish, setFinish] = useState<FinishOption>('Grain-finished');
   const activeBatches = getActiveHarvestBatches();
+
+  useEffect(() => {
+    const unsubscribe = subscribeContentStore(() => {
+      setContentStore({ ...getClientContentStore() });
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const shareTiers = contentStore.shareTiers;
+  const fees = contentStore.fees;
 
   const [formData, setFormData] = useState<ReservationPayload>({
     name: '',
@@ -41,7 +53,7 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
     }
   }, [initialShareSize]);
 
-  const selectedTier = BEEF_SHARE_TIERS.find((t) => t.id === shareSize)!;
+  const selectedTier = shareTiers.find((t) => t.id === shareSize) || shareTiers[0];
 
   const triggerConfetti = () => {
     try {
@@ -305,7 +317,7 @@ export default function ReservationPage({ initialShareSize }: ReservationPagePro
                 <div>
                   <h2 className="font-serif text-xl font-bold text-amber-200 mb-3">Step 1: Select Your Beef Share Size</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {BEEF_SHARE_TIERS.map((tier) => {
+                    {shareTiers.map((tier) => {
                       const isSelected = shareSize === tier.id;
                       return (
                         <div

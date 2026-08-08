@@ -41,10 +41,15 @@ import { Order, OrderStatus, FulfillmentMethod, PaymentStatus } from '../types';
 import PrintOrderModal from '../components/PrintOrderModal';
 import { BRAND_IMAGES } from '../data/content';
 import { getHarvestBatches, saveHarvestBatches, HarvestBatch } from '../lib/harvestBatches';
+import {
+  ProductManagementSection,
+  PricingManagementSection,
+  PhotoManagementSection,
+} from '../components/AdminCMSComponents';
 
 export default function AdminDashboardPage() {
   // Navigation tab
-  const [activeTab, setActiveTab] = useState<'orders' | 'batches'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'pricing' | 'photos' | 'batches'>('orders');
 
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -616,41 +621,85 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Primary View Navigation Tabs */}
-        <div className="flex items-center gap-3 border-b border-emerald-900/80 pb-2">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 border-b border-emerald-900/80 pb-3">
           <button
             onClick={() => setActiveTab('orders')}
-            className={`px-5 py-2.5 rounded-xl font-serif text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+            className={`px-4 py-2.5 rounded-xl font-serif text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'orders'
                 ? 'bg-amber-400 text-emerald-950 shadow-lg'
                 : 'bg-[#0f2217] text-stone-300 hover:bg-[#152e20] border border-emerald-800/40'
             }`}
           >
             <Package className="w-4 h-4" />
-            <span>Order Management & Pipeline</span>
+            <span>Order Pipeline</span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('products')}
+            className={`px-4 py-2.5 rounded-xl font-serif text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'products'
+                ? 'bg-amber-400 text-emerald-950 shadow-lg'
+                : 'bg-[#0f2217] text-stone-300 hover:bg-[#152e20] border border-emerald-800/40'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            <span>Product Management</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('pricing')}
+            className={`px-4 py-2.5 rounded-xl font-serif text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'pricing'
+                ? 'bg-amber-400 text-emerald-950 shadow-lg'
+                : 'bg-[#0f2217] text-stone-300 hover:bg-[#152e20] border border-emerald-800/40'
+            }`}
+          >
+            <DollarSign className="w-4 h-4" />
+            <span>Pricing & Fees</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('photos')}
+            className={`px-4 py-2.5 rounded-xl font-serif text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'photos'
+                ? 'bg-amber-400 text-emerald-950 shadow-lg'
+                : 'bg-[#0f2217] text-stone-300 hover:bg-[#152e20] border border-emerald-800/40'
+            }`}
+          >
+            <Trash2 className="w-4 h-4 hidden" />
+            <span>Photo Management</span>
+          </button>
+
           <button
             onClick={() => setActiveTab('batches')}
-            className={`px-5 py-2.5 rounded-xl font-serif text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+            className={`px-4 py-2.5 rounded-xl font-serif text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'batches'
                 ? 'bg-amber-400 text-emerald-950 shadow-lg'
                 : 'bg-[#0f2217] text-stone-300 hover:bg-[#152e20] border border-emerald-800/40'
             }`}
           >
             <Layers className="w-4 h-4" />
-            <span>Harvest Batches Configuration ({harvestBatches.filter((b) => b.active).length} Active)</span>
+            <span>Harvest Batches ({harvestBatches.filter((b) => b.active).length})</span>
           </button>
+
           <button
             onClick={() => {
               window.location.hash = 'admin/chat';
             }}
-            className="px-5 py-2.5 rounded-xl font-serif text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 bg-[#0f2217] text-stone-300 hover:bg-[#152e20] border border-emerald-800/40 cursor-pointer"
+            className="px-4 py-2.5 rounded-xl font-serif text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 bg-[#0f2217] text-stone-300 hover:bg-[#152e20] border border-emerald-800/40 cursor-pointer ml-auto"
           >
             <Headphones className="w-4 h-4 text-amber-400" />
-            <span>Live Customer Chat Console →</span>
+            <span>Live Chat Console →</span>
           </button>
         </div>
 
-        {activeTab === 'batches' ? (
+        {activeTab === 'products' ? (
+          <ProductManagementSection />
+        ) : activeTab === 'pricing' ? (
+          <PricingManagementSection />
+        ) : activeTab === 'photos' ? (
+          <PhotoManagementSection />
+        ) : activeTab === 'batches' ? (
           /* Harvest Batches Management Section */
           <div className="space-y-6">
             <div className="bg-[#0f2217] p-6 rounded-2xl border border-emerald-800/60 shadow-xl space-y-4">

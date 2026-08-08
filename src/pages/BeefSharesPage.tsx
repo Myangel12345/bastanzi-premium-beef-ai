@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Package, Check, ArrowRight, Info, ShieldCheck, ChevronDown, ChevronUp } from 'lucide-react';
-import { BEEF_SHARE_TIERS } from '../data/content';
-import { ShareSize } from '../types';
+import { useState, useEffect } from 'react';
+import { Package, Check, ArrowRight, Info, ShieldCheck, ChevronDown, ChevronUp, Tag } from 'lucide-react';
+import { getClientContentStore, subscribeContentStore } from '../lib/contentStore';
+import { ShareSize, ShareTier } from '../types';
 import SeoHead from '../components/SeoHead';
 
 interface BeefSharesPageProps {
@@ -10,10 +10,19 @@ interface BeefSharesPageProps {
 }
 
 export default function BeefSharesPage({ onSelectShare, onNavigateToContact }: BeefSharesPageProps) {
+  const [contentStore, setContentStore] = useState(getClientContentStore());
   const [selectedShareModal, setSelectedShareModal] = useState<ShareSize | null>(null);
   const [expandedTier, setExpandedTier] = useState<ShareSize>('Half');
 
-  const selectedTier = BEEF_SHARE_TIERS.find((t) => t.id === selectedShareModal);
+  useEffect(() => {
+    const unsubscribe = subscribeContentStore(() => {
+      setContentStore({ ...getClientContentStore() });
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const shareTiers = contentStore.shareTiers;
+  const selectedTier = shareTiers.find((t) => t.id === selectedShareModal);
 
   return (
     <div className="bg-[#0a180f] text-[#f7f2e8] min-h-screen pb-20">
@@ -40,7 +49,7 @@ export default function BeefSharesPage({ onSelectShare, onNavigateToContact }: B
       {/* Pricing Cards */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {BEEF_SHARE_TIERS.map((tier) => (
+          {shareTiers.map((tier) => (
             <div
               key={tier.id}
               className={`bg-[#102218] rounded-2xl p-6 border transition-all flex flex-col justify-between relative ${
@@ -51,13 +60,28 @@ export default function BeefSharesPage({ onSelectShare, onNavigateToContact }: B
             >
               <div>
                 {tier.image && (
-                  <div className="w-full h-44 overflow-hidden rounded-xl mb-4 border border-emerald-800/60 shadow-inner">
+                  <div className="w-full h-44 overflow-hidden rounded-xl mb-4 border border-emerald-800/60 shadow-inner relative">
                     <img
                       src={tier.image}
                       alt={`${tier.title} package`}
                       className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                       referrerPolicy="no-referrer"
                     />
+                    {tier.availabilityStatus && (
+                      <span
+                        className={`absolute top-2 right-2 px-2.5 py-1 text-[10px] font-bold font-mono rounded-full uppercase border shadow-md ${
+                          tier.availabilityStatus === 'In Stock'
+                            ? 'bg-emerald-950/90 text-emerald-300 border-emerald-600/60'
+                            : tier.availabilityStatus === 'Limited Allocation'
+                            ? 'bg-amber-950/90 text-amber-300 border-amber-600/60'
+                            : tier.availabilityStatus === 'Sold Out'
+                            ? 'bg-rose-950/90 text-rose-300 border-rose-600/60'
+                            : 'bg-blue-950/90 text-blue-300 border-blue-600/60'
+                        }`}
+                      >
+                        {tier.availabilityStatus}
+                      </span>
+                    )}
                   </div>
                 )}
                 <div className="text-center border-b border-emerald-900/60 pb-5 mb-5">
@@ -69,6 +93,9 @@ export default function BeefSharesPage({ onSelectShare, onNavigateToContact }: B
                   <span className="text-[11px] text-stone-400 font-mono block mt-1">
                     Deposit: ${tier.depositAmount}
                   </span>
+                  {tier.availabilityNote && (
+                    <p className="text-[10px] text-emerald-400 font-mono mt-1 italic">{tier.availabilityNote}</p>
+                  )}
                 </div>
 
                 <div className="space-y-3 text-xs mb-6 font-light">
@@ -157,7 +184,7 @@ export default function BeefSharesPage({ onSelectShare, onNavigateToContact }: B
           </div>
 
           <div className="space-y-4">
-            {BEEF_SHARE_TIERS.map((tier) => {
+            {shareTiers.map((tier) => {
               const isOpen = expandedTier === tier.id;
               return (
                 <div

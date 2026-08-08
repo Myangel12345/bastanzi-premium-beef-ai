@@ -1,17 +1,45 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GALLERY_ITEMS } from '../data/content';
 import { GalleryItem } from '../types';
+import { getClientContentStore, subscribeContentStore } from '../lib/contentStore';
 import { Maximize2, X, Sparkles } from 'lucide-react';
 import SeoHead from '../components/SeoHead';
 
 export default function GalleryPage() {
+  const [contentStore, setContentStore] = useState(getClientContentStore());
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [selectedImage, setSelectedImage] = useState<GalleryItem | null>(null);
 
+  useEffect(() => {
+    const unsubscribe = subscribeContentStore(() => {
+      setContentStore({ ...getClientContentStore() });
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Merge static gallery items with admin-managed photos
+  const managedGalleryItems: GalleryItem[] = contentStore.photos.map((p) => ({
+    id: p.id,
+    title: p.title,
+    category:
+      p.category.includes('ranch') || p.category.includes('marketing')
+        ? 'ranch'
+        : p.category.includes('packaging') || p.category.includes('vacuum')
+        ? 'packaging'
+        : p.category.includes('butcher')
+        ? 'culinary'
+        : 'cuts',
+    categoryLabel: p.categoryLabel,
+    imageUrl: p.imageUrl,
+    description: p.description,
+  }));
+
+  const allItems = [...managedGalleryItems, ...GALLERY_ITEMS];
+
   const filteredItems =
     activeCategory === 'all'
-      ? GALLERY_ITEMS
-      : GALLERY_ITEMS.filter((item) => item.category === activeCategory);
+      ? allItems
+      : allItems.filter((item) => item.category === activeCategory);
 
   return (
     <div className="bg-[#0a180f] text-[#f7f2e8] min-h-screen pb-20">
