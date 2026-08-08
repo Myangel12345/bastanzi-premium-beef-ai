@@ -225,6 +225,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       emailStatus,
       resendResponses: {
         resendApiKeyConfigured: Boolean(resendApiKey),
+        apiKeyFingerprint: resendApiKey ? {
+          exists: true,
+          length: resendApiKey.length,
+          prefix: resendApiKey.substring(0, 6),
+          suffix: resendApiKey.substring(resendApiKey.length - 4),
+          startsWithRe: resendApiKey.startsWith('re_')
+        } : { exists: false },
         fromEmailConfigured: fromEmail,
         notificationEmailConfigured: notificationEmail,
         customerEmailResponse,

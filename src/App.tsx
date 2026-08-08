@@ -15,6 +15,7 @@ import ContactPage from './pages/ContactPage';
 import ReservationPage from './pages/ReservationPage';
 import TrackOrderPage from './pages/TrackOrderPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
+import AdminChatPage from './pages/AdminChatPage';
 
 import { ShareSize } from './types';
 
@@ -31,12 +32,20 @@ export default function App() {
   useEffect(() => {
     const handleLocationChange = () => {
       const pathname = window.location.pathname.replace(/^\//, '');
+      if (pathname === 'admin/chat' || pathname === 'admin-chat') {
+        setActiveTab('admin-chat');
+        return;
+      }
       if (pathname === 'admin') {
         setActiveTab('admin');
         return;
       }
       const rawHash = window.location.hash.replace('#', '');
       const cleanHash = rawHash.split('?')[0];
+      if (cleanHash === 'admin/chat' || cleanHash === 'admin-chat') {
+        setActiveTab('admin-chat');
+        return;
+      }
       if (
         [
           'home',
@@ -48,6 +57,7 @@ export default function App() {
           'reservation',
           'track-order',
           'admin',
+          'admin-chat',
         ].includes(cleanHash)
       ) {
         setActiveTab(cleanHash);
@@ -106,6 +116,7 @@ export default function App() {
           <TrackOrderPage onNavigateToReservation={() => changeTab('reservation')} />
         )}
         {activeTab === 'admin' && <AdminDashboardPage />}
+        {(activeTab === 'admin-chat' || activeTab === 'admin/chat') && <AdminChatPage />}
       </main>
 
       {/* Footer */}

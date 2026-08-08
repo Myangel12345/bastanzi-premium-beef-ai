@@ -142,3 +142,29 @@ export interface ReviewItem {
   date: string;
   comment: string;
 }
+
+export type ChatRole = 'user' | 'ai' | 'human_agent' | 'system';
+export type ConversationStatus = 'ai_handled' | 'escalated' | 'human_handled' | 'resolved';
+
+export interface ChatMessage {
+  id: string;
+  sender: ChatRole;
+  text: string;
+  timestamp: string;
+  createdAt: string;
+}
+
+export interface ChatConversation {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  customerName?: string;
+  customerEmail?: string;
+  status: ConversationStatus;
+  lastMessage: string;
+  unreadAdmin: boolean;
+  unreadCustomer: boolean;
+  messages: ChatMessage[];
+  associatedOrderId?: string;
+}
+

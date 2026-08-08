@@ -26,6 +26,7 @@ import {
   Calendar,
   Layers,
   Power,
+  Headphones,
 } from 'lucide-react';
 import {
   fetchAllOrdersForAdmin,
@@ -637,6 +638,15 @@ export default function AdminDashboardPage() {
           >
             <Layers className="w-4 h-4" />
             <span>Harvest Batches Configuration ({harvestBatches.filter((b) => b.active).length} Active)</span>
+          </button>
+          <button
+            onClick={() => {
+              window.location.hash = 'admin/chat';
+            }}
+            className="px-5 py-2.5 rounded-xl font-serif text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 bg-[#0f2217] text-stone-300 hover:bg-[#152e20] border border-emerald-800/40 cursor-pointer"
+          >
+            <Headphones className="w-4 h-4 text-amber-400" />
+            <span>Live Customer Chat Console →</span>
           </button>
         </div>
 
