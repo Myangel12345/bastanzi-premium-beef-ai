@@ -20,6 +20,22 @@ export default function BeefConciergeChat({
   onNavigateToReservation,
   onNavigateToContact,
 }: BeefConciergeChatProps) {
+  // Prevent component from rendering or mounting on any authenticated admin routes
+  const currentPath = typeof window !== 'undefined' ? window.location.pathname.toLowerCase() : '';
+  const currentHash = typeof window !== 'undefined' ? window.location.hash.toLowerCase() : '';
+  const isAdminRoute =
+    currentPath === '/admin' ||
+    currentPath.startsWith('/admin/') ||
+    currentPath.startsWith('/admin-chat') ||
+    currentHash === '#admin' ||
+    currentHash.startsWith('#admin/') ||
+    currentHash.startsWith('#/admin') ||
+    currentHash.startsWith('#admin-chat');
+
+  if (isAdminRoute) {
+    return null;
+  }
+
   const [isOpen, setIsOpen] = useState(false);
   const [conversationId, setConversationId] = useState<string>('');
   const [conversation, setConversation] = useState<ChatConversation | null>(null);

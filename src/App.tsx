@@ -132,11 +132,22 @@ export default function App() {
       <SitemapModal isOpen={sitemapModalOpen} onClose={() => setSitemapModalOpen(false)} />
       <VercelConfigModal isOpen={vercelModalOpen} onClose={() => setVercelModalOpen(false)} />
 
-      {/* AI Beef Concierge Chat Widget */}
-      <BeefConciergeChat
-        onNavigateToReservation={() => changeTab('reservation')}
-        onNavigateToContact={() => changeTab('contact')}
-      />
+      {/* AI Beef Concierge Chat Widget - Public customer pages only */}
+      {!(
+        activeTab === 'admin' ||
+        activeTab === 'admin-chat' ||
+        activeTab === 'admin/chat' ||
+        activeTab.startsWith('admin') ||
+        (typeof window !== 'undefined' &&
+          (window.location.pathname.startsWith('/admin') ||
+            window.location.hash.startsWith('#admin') ||
+            window.location.hash.startsWith('#/admin')))
+      ) && (
+        <BeefConciergeChat
+          onNavigateToReservation={() => changeTab('reservation')}
+          onNavigateToContact={() => changeTab('contact')}
+        />
+      )}
     </div>
   );
 }
