@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react';
 import { ArrowRight, ShieldCheck, Award, Star, CheckCircle2, ChevronRight, Sparkles, Truck, Clock, Check } from 'lucide-react';
 import { BRAND_IMAGES, BEEF_SHARE_TIERS, REVIEWS, BUSINESS_INFO } from '../data/content';
 import { ShareSize } from '../types';
+import { getClientContentStore, subscribeContentStore } from '../lib/contentStore';
 import FreezerCalculator from '../components/FreezerCalculator';
 import SeoHead from '../components/SeoHead';
 import WhyChooseUsSection from '../components/WhyChooseUsSection';
@@ -14,6 +16,24 @@ interface HomePageProps {
 }
 
 export default function HomePage({ setActiveTab, onSelectShare }: HomePageProps) {
+  const [contentStore, setContentStore] = useState(getClientContentStore());
+
+  useEffect(() => {
+    const unsubscribe = subscribeContentStore(() => {
+      setContentStore({ ...getClientContentStore() });
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const heroPhoto = contentStore.photos.find(
+    (p) => p.targetSection === 'hero' || p.category === 'marketing' || p.category === 'ranch_cattle'
+  );
+  const heroImageUrl = heroPhoto ? heroPhoto.imageUrl : BRAND_IMAGES.heroRanch;
+
+  const heritagePhoto = contentStore.photos.find(
+    (p) => p.targetSection === 'shares' || p.category === 'ribeye'
+  );
+  const heritageImageUrl = heritagePhoto ? heritagePhoto.imageUrl : BRAND_IMAGES.primeRibeye;
   return (
     <div className="bg-[#0a180f] text-[#f7f2e8] min-h-screen">
       <SeoHead
@@ -26,7 +46,7 @@ export default function HomePage({ setActiveTab, onSelectShare }: HomePageProps)
         {/* Hero Background Image */}
         <div className="absolute inset-0 z-0">
           <img
-            src={BRAND_IMAGES.heroRanch}
+            src={heroImageUrl}
             alt="Bastanzi Cattle Ranch"
             className="w-full h-full object-cover opacity-35 scale-105 transform animate-pulse duration-10000"
             referrerPolicy="no-referrer"
@@ -130,7 +150,7 @@ export default function HomePage({ setActiveTab, onSelectShare }: HomePageProps)
             <div className="lg:col-span-6 relative">
               <div className="relative rounded-2xl overflow-hidden border border-emerald-800/60 shadow-2xl aspect-4/3 group bg-[#12241a]">
                 <img
-                  src={BRAND_IMAGES.primeRibeye}
+                  src={heritageImageUrl}
                   alt="Bastanzi Dry Aged Prime Ribeye"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                   referrerPolicy="no-referrer"

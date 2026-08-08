@@ -43,6 +43,7 @@ import {
   PhotoCategoryKey,
   ShareAvailabilityStatus,
 } from '../types';
+import { uploadImageToSupabase } from '../lib/supabase';
 
 // ==========================================
 // 1. PRODUCT INFORMATION MANAGEMENT COMPONENT
@@ -828,10 +829,19 @@ export function PhotoManagementSection() {
       setSelectedFile(file);
       setIsProcessingFile(true);
       try {
+        // First try uploading to Supabase Storage bucket
+        const supabaseUrl = await uploadImageToSupabase(file);
+        if (supabaseUrl) {
+          setNewPhotoUrl(supabaseUrl);
+        } else {
+          // Fallback to compressed base64 if Supabase storage is unavailable
+          const optimized = await processImageFile(file);
+          setNewPhotoUrl(optimized);
+        }
+      } catch (err) {
+        console.error('Image upload/compression error:', err);
         const optimized = await processImageFile(file);
         setNewPhotoUrl(optimized);
-      } catch (err) {
-        console.error('Image compression error:', err);
       } finally {
         setIsProcessingFile(false);
       }

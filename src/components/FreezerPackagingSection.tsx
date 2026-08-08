@@ -1,8 +1,23 @@
+import { useState, useEffect } from 'react';
 import { Box, Shield, Snowflake, Thermometer, CheckCircle2 } from 'lucide-react';
 import { BRAND_IMAGES } from '../data/content';
+import { getClientContentStore, subscribeContentStore } from '../lib/contentStore';
 import FreezerCalculator from './FreezerCalculator';
 
 export default function FreezerPackagingSection() {
+  const [contentStore, setContentStore] = useState(getClientContentStore());
+
+  useEffect(() => {
+    const unsubscribe = subscribeContentStore(() => {
+      setContentStore({ ...getClientContentStore() });
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const packagingPhoto = contentStore.photos.find(
+    (p) => p.targetSection === 'packaging' || p.category === 'vacuum_packaging'
+  );
+  const packagingImageUrl = packagingPhoto ? packagingPhoto.imageUrl : BRAND_IMAGES.beefShareBox;
   const packagingFeatures = [
     {
       icon: Shield,
@@ -79,7 +94,7 @@ export default function FreezerPackagingSection() {
           {/* Packaging Image Box */}
           <div className="relative rounded-2xl overflow-hidden border border-emerald-800/60 bg-[#12241a] shadow-2xl">
             <img
-              src={BRAND_IMAGES.beefShareBox}
+              src={packagingImageUrl}
               alt="Freezer Ready Beef Packages"
               className="w-full h-80 sm:h-[400px] object-cover"
               referrerPolicy="no-referrer"

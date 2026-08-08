@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import { ShieldCheck, Award, HeartHandshake, CheckCircle2, ArrowRight } from 'lucide-react';
 import { BRAND_IMAGES, BUSINESS_INFO } from '../data/content';
+import { getClientContentStore, subscribeContentStore } from '../lib/contentStore';
 import SeoHead from '../components/SeoHead';
 
 interface AboutPageProps {
@@ -7,6 +9,24 @@ interface AboutPageProps {
 }
 
 export default function AboutPage({ setActiveTab }: AboutPageProps) {
+  const [contentStore, setContentStore] = useState(getClientContentStore());
+
+  useEffect(() => {
+    const unsubscribe = subscribeContentStore(() => {
+      setContentStore({ ...getClientContentStore() });
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const sunsetPhoto = contentStore.photos.find(
+    (p) => p.targetSection === 'about' || p.category === 'marketing' || p.category === 'ranch_cattle'
+  );
+  const sunsetImageUrl = sunsetPhoto ? sunsetPhoto.imageUrl : BRAND_IMAGES.ranchSunset;
+
+  const pasturePhoto = contentStore.photos.find(
+    (p) => p.targetSection === 'ranch' || p.category === 'ranch_cattle'
+  );
+  const pastureImageUrl = pasturePhoto ? pasturePhoto.imageUrl : BRAND_IMAGES.pastureCattle;
   return (
     <div className="bg-[#0a180f] text-[#f7f2e8] min-h-screen pb-20">
       <SeoHead
@@ -18,7 +38,7 @@ export default function AboutPage({ setActiveTab }: AboutPageProps) {
       <section className="relative py-20 bg-[#0c1a12] border-b border-emerald-900/60 overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <img
-            src={BRAND_IMAGES.ranchSunset}
+            src={sunsetImageUrl}
             alt="Ranch Sunset"
             className="w-full h-full object-cover"
             referrerPolicy="no-referrer"
@@ -70,7 +90,7 @@ export default function AboutPage({ setActiveTab }: AboutPageProps) {
           <div className="lg:col-span-6">
             <div className="rounded-2xl overflow-hidden border border-emerald-800/60 shadow-2xl aspect-4/3 relative bg-[#12241a]">
               <img
-                src={BRAND_IMAGES.pastureCattle}
+                src={pastureImageUrl}
                 alt="Angus Cattle Grazing"
                 className="w-full h-full object-cover"
                 referrerPolicy="no-referrer"

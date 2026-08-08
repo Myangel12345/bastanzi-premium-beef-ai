@@ -1,108 +1,140 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sparkles, Flame, Check } from 'lucide-react';
 import { BRAND_IMAGES } from '../data/content';
+import { getClientContentStore, subscribeContentStore } from '../lib/contentStore';
 
 export default function PremiumCutsSection() {
   const [activeCategory, setActiveCategory] = useState<'all' | 'steaks' | 'roasts' | 'ground'>('all');
+  const [contentStore, setContentStore] = useState(getClientContentStore());
 
-  const cutsData = [
+  useEffect(() => {
+    const unsubscribe = subscribeContentStore(() => {
+      setContentStore({ ...getClientContentStore() });
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const baseCuts = [
     {
       id: 'cut-1',
       name: 'USDA-Quality Ribeye Steak',
       category: 'steaks',
+      cutCategoryKey: 'ribeye',
       thickness: '1.25" – 1.5" Thick Cut',
       priceNotice: 'Contact us for pricing',
       marbling: 'High Intramuscular Marbling',
       cooking: 'High-Heat Cast Iron Sear / Grilling',
       description: 'Rich, juicy ribeye featuring intricate marbling streaks dry-aged for 21 days for maximum steakhouse tenderness.',
-      imageUrl: '/images/bastanzi_ribeye_slate_1785838381086.jpg',
+      defaultImageUrl: '/images/bastanzi_ribeye_slate_1785838381086.jpg',
       shareInclusion: 'Full, Half, Quarter & Eighth Shares',
     },
     {
       id: 'cut-2',
       name: 'New York Strip Steak & T-Bone',
       category: 'steaks',
+      cutCategoryKey: 'beef_cuts',
       thickness: '1.25" Thick Cut',
       priceNotice: 'Contact us for pricing',
       marbling: 'Bold Edge Fat Cap & Dense Marbling',
       cooking: 'Pan Seared with Garlic Butter & Herbs',
       description: 'Classic steakhouse cut offering robust beef flavor, tight grain texture, and a flavorful outer fat ribbon.',
-      imageUrl: '/images/bastanzi_meat_display_1785838215157.jpg',
+      defaultImageUrl: '/images/bastanzi_meat_display_1785838215157.jpg',
       shareInclusion: 'Full, Half, Quarter & Eighth Shares',
     },
     {
       id: 'cut-3',
       name: 'Center-Cut Filet Mignon',
       category: 'steaks',
+      cutCategoryKey: 'filet_mignon',
       thickness: '1.5" – 2" Center Cut',
       priceNotice: 'Contact us for pricing',
       marbling: 'Ultra-Lean & Extremely Tender',
       cooking: 'Reverse Sear / Butter Basted',
       description: 'The most tender muscle on the animal. Melt-in-your-mouth texture with delicate butter notes.',
-      imageUrl: '/images/bastanzi_filet_mignon_1785838437969.jpg',
+      defaultImageUrl: '/images/bastanzi_filet_mignon_1785838437969.jpg',
       shareInclusion: 'Full, Half & Quarter Shares',
     },
     {
       id: 'cut-4',
       name: 'Top Sirloin & Skirt Steak',
       category: 'steaks',
+      cutCategoryKey: 'beef_cuts',
       thickness: '1" – 1.25" Thick Cut',
       priceNotice: 'Contact us for pricing',
       marbling: 'Lean & Mineral-Rich',
       cooking: 'Grilling / Broiling / Kabobs',
       description: 'Versatile, juicy top sirloin and skirt steaks packed with intense beef flavor and clean finishing notes.',
-      imageUrl: '/images/bastanzi_skirt_strips_1785838348308.jpg',
+      defaultImageUrl: '/images/bastanzi_skirt_strips_1785838348308.jpg',
       shareInclusion: 'Full, Half, Quarter & Eighth Shares',
     },
     {
       id: 'cut-5',
       name: 'Full Packer Brisket & Strip Roast',
       category: 'roasts',
+      cutCategoryKey: 'brisket',
       thickness: '10 – 14 lbs Whole Packer',
       priceNotice: 'Contact us for pricing',
       marbling: 'Complete Flat & Point Fat Cap',
       cooking: 'Low & Slow Wood Smoking (225°F)',
       description: 'Un-trimmed whole packer brisket and roasts with thick fat cap ready for pitmasters and long weekend smokes.',
-      imageUrl: '/images/bastanzi_boxed_roasts_1785838239509.jpg',
+      defaultImageUrl: '/images/bastanzi_boxed_roasts_1785838239509.jpg',
       shareInclusion: 'Full & Half Shares (Optional Quarter)',
     },
     {
       id: 'cut-6',
       name: 'Chuck Roast & English Short Ribs',
       category: 'roasts',
+      cutCategoryKey: 'short_ribs',
       thickness: 'Thick Bone-In Racks',
       priceNotice: 'Contact us for pricing',
       marbling: 'High Collagen & Deep Marbling',
       cooking: 'Red Wine Braise / Smoked Beef Ribs',
       description: 'Meaty bone-in short rib racks and chuck roasts that become incredibly rich and tender when slow-braised.',
-      imageUrl: '/images/bastanzi_english_shortribs_1785838367019.jpg',
+      defaultImageUrl: '/images/bastanzi_english_shortribs_1785838367019.jpg',
       shareInclusion: 'Full, Half & Quarter Shares',
     },
     {
       id: 'cut-7',
       name: 'Artisan Stew Meat & Soup Bones',
       category: 'roasts',
+      cutCategoryKey: 'chuck_roast',
       thickness: '3 – 4 lbs Portion',
       priceNotice: 'Contact us for pricing',
       marbling: 'Deep Intermuscular Fat & Marrow',
       cooking: 'Braising / Dutch Oven Stew & Broth',
       description: 'Hand-trimmed beef stew cubes and nutrient-rich marrow soup bones for rich beef broth.',
-      imageUrl: '/images/bastanzi_stew_cubes_1785838393915.jpg',
+      defaultImageUrl: '/images/bastanzi_stew_cubes_1785838393915.jpg',
       shareInclusion: 'Full, Half, Quarter & Eighth Shares',
     },
     {
       id: 'cut-8',
       name: 'Gourmet Ground Beef (80/20 & 90/10)',
       category: 'ground',
+      cutCategoryKey: 'ground_beef',
       thickness: '1 lb Flash-Frozen Vacuum Chubs',
       priceNotice: 'Contact us for pricing',
       marbling: 'Pure Muscle & Clean Fat Blend',
       cooking: 'Smash Burgers / Meatballs / Tacos',
       description: 'Single-source artisan ground beef ground from whole muscle trimmings with zero additives or fillers.',
-      imageUrl: '/images/bastanzi_countertop_boxes_1785838324488.jpg',
+      defaultImageUrl: '/images/bastanzi_countertop_boxes_1785838324488.jpg',
       shareInclusion: 'All Beef Shares (Approx 45-50% of Total Weight)',
     },
   ];
+
+  // Map dynamic uploaded photos to cut cards
+  const cutsData = baseCuts.map((cut) => {
+    // Check if store has a photo matching the cut category key or cut title
+    const matchingPhoto = contentStore.photos.find(
+      (p) =>
+        p.category === cut.cutCategoryKey ||
+        p.title.toLowerCase().includes(cut.name.toLowerCase().split(' ')[0]) ||
+        p.description.toLowerCase().includes(cut.name.toLowerCase().split(' ')[0])
+    );
+    return {
+      ...cut,
+      imageUrl: matchingPhoto ? matchingPhoto.imageUrl : cut.defaultImageUrl,
+    };
+  });
 
   const filteredCuts = activeCategory === 'all' 
     ? cutsData 

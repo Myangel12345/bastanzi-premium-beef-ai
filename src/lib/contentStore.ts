@@ -303,6 +303,12 @@ let currentStoreState: ContentStoreState = {
   lastUpdated: new Date().toISOString(),
 };
 
+import {
+  syncPhotoToSupabase,
+  deletePhotoFromSupabase,
+  fetchPhotosFromSupabase,
+} from './supabase';
+
 const listeners: Set<() => void> = new Set();
 
 export function subscribeContentStore(callback: () => void): () => void {
@@ -322,7 +328,7 @@ function notifyListeners() {
   });
 }
 
-// Load initial state from LocalStorage or API
+// Load initial state from LocalStorage or API and Supabase
 export function initContentStore(): ContentStoreState {
   if (typeof window === 'undefined') return currentStoreState;
 
@@ -335,6 +341,25 @@ export function initContentStore(): ContentStoreState {
     console.error('[ContentStore] Error loading local storage:', err);
   }
 
+  // Fetch remote Supabase photos if configured
+  fetchPhotosFromSupabase()
+    .then((supabasePhotos) => {
+      if (supabasePhotos && supabasePhotos.length > 0) {
+        // Merge Supabase photos into store
+        const existingIds = new Set(supabasePhotos.map((p) => p.id));
+        const mergedPhotos = [
+          ...supabasePhotos,
+          ...currentStoreState.photos.filter((p) => !existingIds.has(p.id)),
+        ];
+        currentStoreState.photos = mergedPhotos;
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(currentStoreState));
+        notifyListeners();
+      }
+    })
+    .catch((err) => {
+      console.warn('[ContentStore] Supabase photo sync warning:', err);
+    });
+
   // Fetch remote backend state
   fetch('/api/content-store')
     .then((res) => {
@@ -343,8 +368,16 @@ export function initContentStore(): ContentStoreState {
     })
     .then((data: ContentStoreState) => {
       if (data && data.shareTiers) {
-        currentStoreState = data;
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+        // Keep any newly synced Supabase photos
+        const combinedPhotos = [
+          ...currentStoreState.photos,
+          ...(data.photos || []).filter((dp) => !currentStoreState.photos.some((cp) => cp.id === dp.id)),
+        ];
+        currentStoreState = {
+          ...data,
+          photos: combinedPhotos.length > 0 ? combinedPhotos : data.photos,
+        };
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(currentStoreState));
         notifyListeners();
       }
     })
@@ -471,10 +504,28 @@ export async function addPhotoToStore(photo: {
   };
 
   currentStoreState.photos.unshift(newPhoto);
+
+  // If photo targets product shares or matches a share size name, update the corresponding product tier image
+  if (photo.targetSection === 'shares' || photo.category === 'beef_cuts') {
+    const titleLower = photo.title.toLowerCase();
+    const matchedTier = currentStoreState.shareTiers.find((t) =>
+      titleLower.includes(t.id.toLowerCase()) || titleLower.includes(t.title.toLowerCase())
+    );
+    if (matchedTier) {
+      matchedTier.image = photo.imageUrl;
+    } else if (photo.targetSection === 'shares' && currentStoreState.shareTiers.length > 0) {
+      // Default fallback to first tier if targeted at shares section
+      currentStoreState.shareTiers[0].image = photo.imageUrl;
+    }
+  }
+
   currentStoreState.lastUpdated = new Date().toISOString();
 
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(currentStoreState));
   notifyListeners();
+
+  // Sync to Supabase database table
+  syncPhotoToSupabase(newPhoto).catch((e) => console.warn('Supabase photo sync error:', e));
 
   try {
     const res = await fetch('/api/content-store', {
@@ -491,8 +542,11 @@ export async function addPhotoToStore(photo: {
     if (res.ok) {
       const data = await res.json();
       if (data.store) {
-        currentStoreState = data.store;
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data.store));
+        currentStoreState = {
+          ...data.store,
+          photos: currentStoreState.photos,
+        };
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(currentStoreState));
         notifyListeners();
       }
     }
@@ -521,6 +575,9 @@ export async function replacePhotoInStore(
     }
     if (description !== undefined) target.description = description;
     target.updatedAt = new Date().toISOString();
+
+    // Sync to Supabase database table
+    syncPhotoToSupabase(target).catch((e) => console.warn('Supabase photo sync error:', e));
   }
 
   currentStoreState.lastUpdated = new Date().toISOString();
@@ -546,8 +603,11 @@ export async function replacePhotoInStore(
     if (res.ok) {
       const data = await res.json();
       if (data.store) {
-        currentStoreState = data.store;
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data.store));
+        currentStoreState = {
+          ...data.store,
+          photos: currentStoreState.photos,
+        };
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(currentStoreState));
         notifyListeners();
       }
     }
@@ -565,6 +625,9 @@ export async function deletePhotoFromStore(photoId: string): Promise<ContentStor
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(currentStoreState));
   notifyListeners();
 
+  // Delete from Supabase database table
+  deletePhotoFromSupabase(photoId).catch((e) => console.warn('Supabase photo delete error:', e));
+
   try {
     const res = await fetch('/api/content-store', {
       method: 'POST',
@@ -580,8 +643,11 @@ export async function deletePhotoFromStore(photoId: string): Promise<ContentStor
     if (res.ok) {
       const data = await res.json();
       if (data.store) {
-        currentStoreState = data.store;
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data.store));
+        currentStoreState = {
+          ...data.store,
+          photos: currentStoreState.photos,
+        };
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(currentStoreState));
         notifyListeners();
       }
     }

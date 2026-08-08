@@ -5,6 +5,7 @@ import {
   OrderHistory,
   OrderStatus,
   ReservationPayload,
+  ManagedPhoto,
 } from '../types';
 
 const env = (import.meta as any).env || {};
@@ -32,6 +33,112 @@ export const supabase = (() => {
     return null;
   }
 })();
+
+// Upload image file to Supabase Storage
+export async function uploadImageToSupabase(file: File): Promise<string | null> {
+  if (!supabase) return null;
+  try {
+    const fileExt = file.name.split('.').pop() || 'jpg';
+    const fileName = `photo_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+    const filePath = `uploads/${fileName}`;
+
+    // Try 'images' bucket first
+    let { data, error } = await supabase.storage
+      .from('images')
+      .upload(filePath, file, { cacheControl: '3600', upsert: true });
+
+    if (error) {
+      // Fallback to 'photos' bucket if 'images' bucket is not created
+      const res2 = await supabase.storage
+        .from('photos')
+        .upload(filePath, file, { cacheControl: '3600', upsert: true });
+
+      if (!res2.error) {
+        const { data: publicUrlData } = supabase.storage.from('photos').getPublicUrl(filePath);
+        return publicUrlData.publicUrl;
+      }
+      console.warn('Supabase storage upload error:', error.message || error);
+      return null;
+    }
+
+    const { data: publicUrlData } = supabase.storage.from('images').getPublicUrl(filePath);
+    return publicUrlData.publicUrl;
+  } catch (err) {
+    console.warn('Supabase storage upload exception:', err);
+    return null;
+  }
+}
+
+// Sync photo metadata record to Supabase database table 'photos'
+export async function syncPhotoToSupabase(photo: ManagedPhoto): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('photos').upsert(
+      {
+        id: photo.id,
+        title: photo.title,
+        category: photo.category,
+        category_label: photo.categoryLabel,
+        image_url: photo.imageUrl,
+        description: photo.description,
+        target_section: photo.targetSection,
+        updated_at: photo.updatedAt,
+      },
+      { onConflict: 'id' }
+    );
+    if (error) {
+      console.warn('Supabase photo upsert warning:', error.message || error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Supabase photo sync exception:', err);
+    return false;
+  }
+}
+
+// Delete photo record from Supabase database table 'photos'
+export async function deletePhotoFromSupabase(photoId: string): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { error } = await supabase.from('photos').delete().eq('id', photoId);
+    if (error) {
+      console.warn('Supabase photo delete warning:', error.message || error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('Supabase photo delete exception:', err);
+    return false;
+  }
+}
+
+// Fetch photo metadata records from Supabase database table 'photos'
+export async function fetchPhotosFromSupabase(): Promise<ManagedPhoto[] | null> {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('photos')
+      .select('*')
+      .order('updated_at', { ascending: false });
+
+    if (!error && data && data.length > 0) {
+      return data.map((item: any) => ({
+        id: item.id,
+        title: item.title,
+        category: item.category,
+        categoryLabel: item.category_label || item.category,
+        imageUrl: item.image_url || item.imageUrl,
+        description: item.description || '',
+        updatedAt: item.updated_at || item.updatedAt || new Date().toISOString(),
+        targetSection: item.target_section || item.targetSection || 'gallery',
+      }));
+    }
+  } catch (err) {
+    console.warn('Supabase photos fetch exception:', err);
+  }
+  return null;
+}
 
 // Initial sample orders for fallback or demo (empty for production)
 const DEFAULT_DEMO_ORDERS: Order[] = [];
