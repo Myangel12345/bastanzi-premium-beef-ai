@@ -20,7 +20,6 @@ function deduplicateMessages(messages: ChatMessage[]): ChatMessage[] {
   if (!Array.isArray(messages)) return [];
 
   const seenIds = new Set<string>();
-  const seenRoleText = new Set<string>();
   const result: ChatMessage[] = [];
 
   for (const msg of messages) {
@@ -36,13 +35,18 @@ function deduplicateMessages(messages: ChatMessage[]): ChatMessage[] {
       continue;
     }
 
-    const signature = `${sender}::${text}`;
-    if (seenRoleText.has(signature)) {
+    const msgTime = new Date(msg.createdAt || Date.now()).getTime();
+    const isRecentDuplicate = result.some((existing) => {
+      if (existing.sender !== sender || existing.text !== text) return false;
+      const existingTime = new Date(existing.createdAt || Date.now()).getTime();
+      return Math.abs(msgTime - existingTime) < 60000;
+    });
+
+    if (isRecentDuplicate) {
       continue;
     }
 
     if (id) seenIds.add(id);
-    seenRoleText.add(signature);
 
     result.push({
       ...msg,

@@ -89,29 +89,93 @@ CUSTOMER SERVICE & ESCALATION POLICY:
 `;
 }
 
-function getKnowledgeBaseReply(message: string): string {
+function getKnowledgeBaseReply(message: string, historyMsgs: ChatMessage[] = []): string {
   const liveStore = loadContentStore();
   const liveTiers = liveStore.shareTiers;
-  const pricesSummary = liveTiers.map((t) => `${t.title}: ${t.priceRange} ($${t.depositAmount} deposit, ${t.weightLbs})`).join(', ');
+  const pricesSummary = liveTiers
+    .map((t) => `${t.title}: ${t.priceRange} ($${t.depositAmount} deposit, ${t.weightLbs})`)
+    .join(', ');
 
   const lower = message.toLowerCase();
-  if (lower.includes('freezer') || lower.includes('space') || lower.includes('cubic')) {
-    return "Freezer space rules of thumb: An Eighth Share (~50 lbs) needs 1.5–2 cu. ft. (fits in a standard kitchen freezer), a Quarter Share (~100 lbs) needs 4–5 cu. ft., a Half Share (~200 lbs) needs 8–10 cu. ft. (medium chest freezer), and a Full Share (~400 lbs) needs 16–20 cu. ft.";
-  } else if (lower.includes('half share') || lower.includes('half')) {
-    if (lower.includes('price') || lower.includes('cost') || lower.includes('how much') || lower.includes('rate')) {
-      return "Our Half Beef Share is priced between $1,650 and $2,085 ($300 deposit) for ~200–220 lbs of 21-day dry-aged packaged beef. It includes a custom butcher consult for your favorite cuts.";
-    } else {
-      return "Our Half Beef Share gives you ~200–220 lbs of packaged 21-day dry-aged beef ($1,650–$2,085, $300 deposit). It requires 8–10 cu. ft. of freezer space and includes a custom master butcher consult.";
+
+  // Extract contextual clues from last 4 turns if user uses pronouns ("it", "that", "mine", "the half", "the price")
+  let contextualTopic = '';
+  if (historyMsgs && historyMsgs.length > 0) {
+    const recentText = historyMsgs
+      .slice(-4)
+      .map((m) => (m.text || '').toLowerCase())
+      .join(' ');
+    if (recentText.includes('half')) contextualTopic = 'half';
+    else if (recentText.includes('full')) contextualTopic = 'full';
+    else if (recentText.includes('quarter')) contextualTopic = 'quarter';
+    else if (recentText.includes('eighth')) contextualTopic = 'eighth';
+  }
+
+  if (lower.includes('freezer') || lower.includes('space') || lower.includes('cubic') || lower.includes('cu. ft')) {
+    if (lower.includes('half') || contextualTopic === 'half') {
+      return "For a Half Beef Share (~200–220 lbs), you will need 8–10 cu. ft. of freezer space (a medium chest freezer).";
+    } else if (lower.includes('full') || contextualTopic === 'full') {
+      return "For a Full Beef Share (~400–440 lbs), you will need 16–20 cu. ft. of freezer space (a large chest freezer).";
+    } else if (lower.includes('quarter') || contextualTopic === 'quarter') {
+      return "For a Quarter Beef Share (~100–110 lbs), you will need 4–5 cu. ft. of freezer space.";
+    } else if (lower.includes('eighth') || contextualTopic === 'eighth') {
+      return "An Eighth Beef Share (~50–55 lbs) needs 1.5–2 cu. ft. of freezer space and fits right in a standard kitchen refrigerator freezer.";
     }
-  } else if (lower.includes('share') || lower.includes('offer') || lower.includes('option') || lower.includes('tier')) {
-    return "We offer four pasture-raised 21-day dry-aged beef share sizes: Full Share (400–440 lbs, $3,300–$4,200), Half Share (200–220 lbs, $1,650–$2,085), Quarter Share (100–110 lbs, $850–$1,050), and Eighth Share (50–55 lbs, $450–$550). All shares feature 100% grass-fed or grain-finished options.";
-  } else if (lower.includes('price') || lower.includes('cost') || lower.includes('how much') || lower.includes('rate')) {
+    return "Freezer space rules of thumb: Eighth Share (~50 lbs) needs 1.5–2 cu. ft. (fits in kitchen freezer), Quarter Share (~100 lbs) needs 4–5 cu. ft., Half Share (~200 lbs) needs 8–10 cu. ft. (medium chest freezer), and Full Share (~400 lbs) needs 16–20 cu. ft.";
+  }
+
+  if (
+    lower.includes('price') ||
+    lower.includes('cost') ||
+    lower.includes('how much') ||
+    lower.includes('rate') ||
+    lower.includes('deposit')
+  ) {
+    if (lower.includes('half') || contextualTopic === 'half') {
+      return "Our Half Beef Share is priced between $1,650 and $2,085 ($300 deposit) for ~200–220 lbs of 21-day dry-aged packaged beef. It includes a custom master butcher consultation for your favorite cuts.";
+    } else if (lower.includes('full') || contextualTopic === 'full') {
+      return "Our Full Beef Share is priced between $3,300 and $4,200 ($500 deposit) for ~400–440 lbs of packaged beef with custom butcher options.";
+    } else if (lower.includes('quarter') || contextualTopic === 'quarter') {
+      return "Our Quarter Beef Share is priced between $850 and $1,050 ($200 deposit) for ~100–110 lbs of packaged beef.";
+    } else if (lower.includes('eighth') || contextualTopic === 'eighth') {
+      return "Our Eighth Beef Share is priced between $450 and $550 ($100 deposit) for ~50–55 lbs of packaged beef.";
+    }
     return `Our live Beef Share rates are: ${pricesSummary}. Local delivery is $${liveStore.fees.localDeliveryFee} and nationwide express shipping is $${liveStore.fees.nationwideShippingFee}.`;
-  } else if (lower.includes('cut') || lower.includes('ribeye') || lower.includes('brisket') || lower.includes('filet')) {
-    return "All of our shares include a balanced mix of 21-day dry-aged Prime Steaks (Ribeyes, NY Strips, Filet Mignon, Sirloin), Roasts & Slow Cuts (Chuck Roast, Brisket, Short Ribs, Rump Roast), and Gourmet Ground Beef (1lb vacuum packs).";
-  } else {
+  }
+
+  if (lower.includes('hanging weight') || lower.includes('take-home') || lower.includes('yield') || lower.includes('carcass')) {
+    return "Hanging weight is carcass weight before 21 days of dry-aging and trimming. Bastanzi transparently sells exact packaged take-home weight (~60-65% yield of hanging weight). You pay only for exact packaged cut weight!";
+  }
+
+  if (lower.includes('grass') || lower.includes('grain') || lower.includes('finishing') || lower.includes('marbling')) {
+    return "We offer both 100% Grass-Fed (leaner, mineral-rich, herbal flavor high in Omega-3s) and Grain-Finished (pasture-raised for 85% of life, finished on local barley & alfalfa for rich, buttery marbling). Full and Half shares also offer a 50/50 Mixed Split!";
+  }
+
+  if (lower.includes('cut') || lower.includes('ribeye') || lower.includes('brisket') || lower.includes('filet') || lower.includes('steak') || lower.includes('roast') || lower.includes('ground')) {
+    return "All of our shares include a balanced selection of 21-day dry-aged Prime Steaks (Ribeyes, NY Strips, Filet Mignon, Sirloins), Roasts & Slow Cuts (Chuck Roast, Brisket, Short Ribs, Rump Roast), and Gourmet Ground Beef in 1lb vacuum packs.";
+  }
+
+  if (lower.includes('shipping') || lower.includes('delivery') || lower.includes('ship') || lower.includes('deliver') || lower.includes('phoenix') || lower.includes('arizona')) {
+    return "We offer free local doorstep delivery across the Phoenix Metro area (Phoenix, Scottsdale, Paradise Valley, Gilbert, Chandler, Mesa, Cave Creek). Nationwide express shipping is $49 in insulated cooler boxes with dry ice, guaranteed 100% frozen arrival!";
+  }
+
+  if (lower.includes('reserve') || lower.includes('order') || lower.includes('buy') || lower.includes('deposit') || lower.includes('how to')) {
+    return "To reserve a share, click 'Reserve Share' on our website, select your size (Full, Half, Quarter, or Eighth) and finishing choice (Grass-Fed or Grain-Finished), enter your delivery details, and pay a small deposit to lock your harvest allocation.";
+  }
+
+  if (lower.includes('hi') || lower.includes('hello') || lower.includes('hey') || lower.includes('welcome') || lower.includes('good morning') || lower.includes('good afternoon')) {
     return "Welcome to Bastanzi Premium Beef Co.! We offer 21-day dry-aged pasture-raised beef shares with grass-fed and grain-finished butchering options, delivered direct to your door. How can I help you choose the right share today?";
   }
+
+  if (lower.includes('half share') || lower.includes('half')) {
+    return "Our Half Beef Share gives you ~200–220 lbs of packaged 21-day dry-aged beef ($1,650–$2,085, $300 deposit). It requires 8–10 cu. ft. of freezer space and includes a custom master butcher consult.";
+  }
+
+  if (lower.includes('share') || lower.includes('offer') || lower.includes('option') || lower.includes('tier') || lower.includes('size')) {
+    return "We offer four pasture-raised 21-day dry-aged beef share sizes: Full Share (400–440 lbs, $3,300–$4,200), Half Share (200–220 lbs, $1,650–$2,085), Quarter Share (100–110 lbs, $850–$1,050), and Eighth Share (50–55 lbs, $450–$550). All shares feature 100% grass-fed or grain-finished options.";
+  }
+
+  return "Welcome to Bastanzi Premium Beef Co.! We offer 21-day dry-aged pasture-raised beef shares (Full, Half, Quarter, Eighth) with grass-fed and grain-finished butchering options, delivered direct to your door. How can I help you choose the right share today?";
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -250,7 +314,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!hasApiKey) {
       console.warn('[STAGE 2 WARNING] GEMINI_API_KEY is missing in process.env. Generating fallback response from live knowledge base.');
-      replyText = getKnowledgeBaseReply(message);
+      conv.messages = deduplicateMessages(conv.messages);
+      const historyMsgs = conv.messages.slice(-12);
+      replyText = getKnowledgeBaseReply(message, historyMsgs);
       console.log('[STAGE 2 SUCCESS] Knowledge base fallback generated successfully. Length:', replyText.length);
     } else {
       let aiClient: GoogleGenAI | null = null;
@@ -315,8 +381,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       // STAGE 3 = Gemini request sent (with 30-second timeout)
-      const primaryModel = 'gemini-2.0-flash';
-      const fallbackModel = 'gemini-1.5-flash';
+      const primaryModel = 'gemini-3.6-flash';
+      const fallbackModel = 'gemini-flash-latest';
       console.log(`[STAGE 3] Gemini request starting... Model: ${primaryModel} | History blocks: ${contents.length}`);
       console.log('[STAGE 3] Gemini contents payload:', JSON.stringify(contents, null, 2));
 
@@ -353,28 +419,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           response = await Promise.race([fallbackPromise, timeoutPromise]);
         } catch (fallbackErr: any) {
           console.warn('[STAGE 3 WARNING] Gemini API call failed or had insufficient scopes. Generating response from live knowledge base. Error:', fallbackErr?.message || fallbackErr);
-          const liveStore = loadContentStore();
-          const liveTiers = liveStore.shareTiers;
-          const pricesSummary = liveTiers.map((t) => `${t.title}: ${t.priceRange} ($${t.depositAmount} deposit, ${t.weightLbs})`).join(', ');
-
-          const lower = message.toLowerCase();
-          if (lower.includes('freezer') || lower.includes('space') || lower.includes('cubic')) {
-            replyText = "Freezer space rules of thumb: An Eighth Share (~50 lbs) needs 1.5–2 cu. ft. (fits in a standard kitchen freezer), a Quarter Share (~100 lbs) needs 4–5 cu. ft., a Half Share (~200 lbs) needs 8–10 cu. ft. (medium chest freezer), and a Full Share (~400 lbs) needs 16–20 cu. ft.";
-          } else if (lower.includes('half share') || lower.includes('half')) {
-            if (lower.includes('price') || lower.includes('cost') || lower.includes('how much') || lower.includes('rate')) {
-              replyText = "Our Half Beef Share is priced between $1,650 and $2,085 ($300 deposit) for ~200–220 lbs of 21-day dry-aged packaged beef. It includes a custom butcher consult for your favorite cuts.";
-            } else {
-              replyText = "Our Half Beef Share gives you ~200–220 lbs of packaged 21-day dry-aged beef ($1,650–$2,085, $300 deposit). It requires 8–10 cu. ft. of freezer space and includes a custom master butcher consult.";
-            }
-          } else if (lower.includes('share') || lower.includes('offer') || lower.includes('option') || lower.includes('tier')) {
-            replyText = "We offer four pasture-raised 21-day dry-aged beef share sizes: Full Share (400–440 lbs, $3,300–$4,200), Half Share (200–220 lbs, $1,650–$2,085), Quarter Share (100–110 lbs, $850–$1,050), and Eighth Share (50–55 lbs, $450–$550). All shares feature 100% grass-fed or grain-finished options.";
-          } else if (lower.includes('price') || lower.includes('cost') || lower.includes('how much') || lower.includes('rate')) {
-            replyText = `Our live Beef Share rates are: ${pricesSummary}. Local delivery is $${liveStore.fees.localDeliveryFee} and nationwide express shipping is $${liveStore.fees.nationwideShippingFee}.`;
-          } else if (lower.includes('cut') || lower.includes('ribeye') || lower.includes('brisket') || lower.includes('filet')) {
-            replyText = "All of our shares include a balanced mix of 21-day dry-aged Prime Steaks (Ribeyes, NY Strips, Filet Mignon, Sirloin), Roasts & Slow Cuts (Chuck Roast, Brisket, Short Ribs, Rump Roast), and Gourmet Ground Beef (1lb vacuum packs).";
-          } else {
-            replyText = "Welcome to Bastanzi Premium Beef Co.! We offer 21-day dry-aged pasture-raised beef shares with grass-fed and grain-finished butchering options, delivered direct to your door. How can I help you choose the right share today?";
-          }
+          replyText = getKnowledgeBaseReply(message, historyMsgs);
         }
       }
 
