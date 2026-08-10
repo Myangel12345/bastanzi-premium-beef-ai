@@ -111,17 +111,39 @@ function getKnowledgeBaseReply(message: string, historyMsgs: ChatMessage[] = [])
     else if (recentText.includes('eighth')) contextualTopic = 'eighth';
   }
 
-  if (lower.includes('freezer') || lower.includes('space') || lower.includes('cubic') || lower.includes('cu. ft')) {
-    if (lower.includes('half') || contextualTopic === 'half') {
-      return "For a Half Beef Share (~200–220 lbs), you will need 8–10 cu. ft. of freezer space (a medium chest freezer).";
-    } else if (lower.includes('full') || contextualTopic === 'full') {
-      return "For a Full Beef Share (~400–440 lbs), you will need 16–20 cu. ft. of freezer space (a large chest freezer).";
-    } else if (lower.includes('quarter') || contextualTopic === 'quarter') {
-      return "For a Quarter Beef Share (~100–110 lbs), you will need 4–5 cu. ft. of freezer space.";
-    } else if (lower.includes('eighth') || contextualTopic === 'eighth') {
+  const hasPronounRef =
+    lower.includes('it') ||
+    lower.includes('that') ||
+    lower.includes('this') ||
+    lower.includes('mine') ||
+    lower.includes('the price') ||
+    lower.includes('the half') ||
+    lower.includes('the cost') ||
+    lower.includes('does it') ||
+    lower.includes('does that');
+
+  const isGeneralQuestion =
+    lower.includes('which') ||
+    lower.includes('all') ||
+    lower.includes('each') ||
+    lower.includes('compare') ||
+    lower.includes('sizes') ||
+    lower.includes('options') ||
+    lower.includes('every');
+
+  const activeTopic = hasPronounRef && !isGeneralQuestion ? contextualTopic : '';
+
+  if (lower.includes('freezer') || lower.includes('space') || lower.includes('cubic') || lower.includes('cu. ft') || lower.includes('cu ft')) {
+    if (lower.includes('half') || activeTopic === 'half') {
+      return "For a Half Beef Share (~200–220 lbs), you will need 8–9 cu. ft. of freezer space (a medium chest freezer).";
+    } else if (lower.includes('full') || activeTopic === 'full') {
+      return "For a Full Beef Share (~400–440 lbs), you will need 16–18 cu. ft. of freezer space (a large chest freezer).";
+    } else if (lower.includes('quarter') || activeTopic === 'quarter') {
+      return "For a Quarter Beef Share (~100–110 lbs), you will need 4.5–5 cu. ft. of freezer space.";
+    } else if (lower.includes('eighth') || activeTopic === 'eighth') {
       return "An Eighth Beef Share (~50–55 lbs) needs 1.5–2 cu. ft. of freezer space and fits right in a standard kitchen refrigerator freezer.";
     }
-    return "Freezer space rules of thumb: Eighth Share (~50 lbs) needs 1.5–2 cu. ft. (fits in kitchen freezer), Quarter Share (~100 lbs) needs 4–5 cu. ft., Half Share (~200 lbs) needs 8–10 cu. ft. (medium chest freezer), and Full Share (~400 lbs) needs 16–20 cu. ft.";
+    return "Freezer space rules of thumb: Eighth Share needs 1.5–2 cu ft, Quarter Share needs 4.5–5 cu ft, Half Share needs 8–9 cu ft, Full Share needs 16–18 cu ft.";
   }
 
   if (
@@ -131,20 +153,28 @@ function getKnowledgeBaseReply(message: string, historyMsgs: ChatMessage[] = [])
     lower.includes('rate') ||
     lower.includes('deposit')
   ) {
-    if (lower.includes('half') || contextualTopic === 'half') {
+    if (lower.includes('half') || activeTopic === 'half') {
       return "Our Half Beef Share is priced between $1,650 and $2,085 ($300 deposit) for ~200–220 lbs of 21-day dry-aged packaged beef. It includes a custom master butcher consultation for your favorite cuts.";
-    } else if (lower.includes('full') || contextualTopic === 'full') {
+    } else if (lower.includes('full') || activeTopic === 'full') {
       return "Our Full Beef Share is priced between $3,300 and $4,200 ($500 deposit) for ~400–440 lbs of packaged beef with custom butcher options.";
-    } else if (lower.includes('quarter') || contextualTopic === 'quarter') {
+    } else if (lower.includes('quarter') || activeTopic === 'quarter') {
       return "Our Quarter Beef Share is priced between $850 and $1,050 ($200 deposit) for ~100–110 lbs of packaged beef.";
-    } else if (lower.includes('eighth') || contextualTopic === 'eighth') {
+    } else if (lower.includes('eighth') || activeTopic === 'eighth') {
       return "Our Eighth Beef Share is priced between $450 and $550 ($100 deposit) for ~50–55 lbs of packaged beef.";
     }
     return `Our live Beef Share rates are: ${pricesSummary}. Local delivery is $${liveStore.fees.localDeliveryFee} and nationwide express shipping is $${liveStore.fees.nationwideShippingFee}.`;
   }
 
-  if (lower.includes('hanging weight') || lower.includes('take-home') || lower.includes('yield') || lower.includes('carcass')) {
-    return "Hanging weight is carcass weight before 21 days of dry-aging and trimming. Bastanzi transparently sells exact packaged take-home weight (~60-65% yield of hanging weight). You pay only for exact packaged cut weight!";
+  if (
+    lower.includes('hanging') ||
+    lower.includes('take-home') ||
+    lower.includes('take home') ||
+    lower.includes('packaged weight') ||
+    lower.includes('cut weight') ||
+    lower.includes('yield') ||
+    lower.includes('carcass')
+  ) {
+    return "Hanging weight is carcass weight before 21 days of dry-aging and trimming. Bastanzi transparently sells exact packaged take-home weight (~60–65% yield of hanging weight). You pay only for exact packaged cut weight!";
   }
 
   if (lower.includes('grass') || lower.includes('grain') || lower.includes('finishing') || lower.includes('marbling')) {

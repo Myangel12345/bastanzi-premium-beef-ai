@@ -185,6 +185,7 @@ export default function BeefConciergeChat({
       const baseMsgs = prev?.messages || [];
       const updatedMsgs = deduplicateMessages([...baseMsgs, tempUserMsg]);
       const updatedConv: ChatConversation = {
+        ...(prev || {}),
         id: conversationId,
         createdAt: prev?.createdAt || nowIso,
         updatedAt: nowIso,
@@ -192,7 +193,6 @@ export default function BeefConciergeChat({
         lastMessage: text,
         unreadAdmin: prev?.unreadAdmin || false,
         unreadCustomer: prev?.unreadCustomer || false,
-        ...prev,
         messages: updatedMsgs,
       };
       try {
@@ -245,6 +245,8 @@ export default function BeefConciergeChat({
         const combined = deduplicateMessages([...prevMsgs, ...serverMsgs, newAssistantMessage]);
 
         const finalConv: ChatConversation = {
+          ...(prev || {}),
+          ...(serverConv || {}),
           id: conversationId,
           createdAt: prev?.createdAt || respIso,
           updatedAt: respIso,
@@ -252,8 +254,6 @@ export default function BeefConciergeChat({
           lastMessage: aiResponseText,
           unreadAdmin: false,
           unreadCustomer: false,
-          ...prev,
-          ...(serverConv || {}),
           messages: combined,
         };
 
