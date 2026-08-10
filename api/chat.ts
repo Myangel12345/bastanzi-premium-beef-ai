@@ -5,8 +5,8 @@ import {
   saveConversation,
   ChatMessage,
   deduplicateMessages,
-} from './chat-store.ts';
-import { loadContentStore } from './content-store.ts';
+} from './chat-store';
+import { loadContentStore } from './content-store';
 
 function buildDynamicSystemInstruction(): string {
   const store = loadContentStore();
@@ -332,131 +332,129 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.log('[STAGE 2 SUCCESS] @google/genai client initialized successfully.');
       } catch (initErr: any) {
         console.error('[STAGE 2 FAILED] @google/genai client initialization exception:', initErr?.message || initErr);
-        return res.status(200).json({
-          message: 'TEMPORARY_ERROR',
-          error: `STAGE 2 failed: Gemini initialization error (${initErr?.message || 'unknown'})`,
-          conversation: conv,
-        });
+        conv.messages = deduplicateMessages(conv.messages);
+        const historyMsgs = conv.messages.slice(-12);
+        replyText = getKnowledgeBaseReply(message, historyMsgs);
       }
 
-      // Format previous messages for memory context, ensuring strictly alternating roles
-      conv.messages = deduplicateMessages(conv.messages);
-      const historyMsgs = conv.messages.slice(-12);
-      const contents: any[] = [];
+      if (!replyText) {
+        // Format previous messages for memory context, ensuring strictly alternating roles
+        conv.messages = deduplicateMessages(conv.messages);
+        const historyMsgs = conv.messages.slice(-12);
+        const contents: any[] = [];
 
-      for (const m of historyMsgs) {
-        const role = m.sender === 'user' ? 'user' : m.sender === 'ai' ? 'model' : null;
-        if (!role) continue;
+        for (const m of historyMsgs) {
+          const role = m.sender === 'user' ? 'user' : m.sender === 'ai' ? 'model' : null;
+          if (!role) continue;
 
-        const text = (m.text || '').trim();
-        if (!text) continue;
+          const text = (m.text || '').trim();
+          if (!text) continue;
 
-        if (contents.length > 0 && contents[contents.length - 1].role === role) {
-          contents[contents.length - 1].parts[0].text += '\n\n' + text;
-        } else {
+          if (contents.length > 0 && contents[contents.length - 1].role === role) {
+            contents[contents.length - 1].parts[0].text += '\n\n' + text;
+          } else {
+            contents.push({
+              role,
+              parts: [{ text }],
+            });
+          }
+        }
+
+        // Gemini API requires contents[0].role to be 'user'
+        while (contents.length > 0 && contents[0].role === 'model') {
+          contents.shift();
+        }
+
+        // Append current user message exactly once
+        const currentUserText = message.trim();
+        if (contents.length === 0 || contents[contents.length - 1].role !== 'user') {
           contents.push({
-            role,
-            parts: [{ text }],
+            role: 'user',
+            parts: [{ text: currentUserText }],
+          });
+        } else if (contents[contents.length - 1].parts[0].text !== currentUserText) {
+          contents.push({
+            role: 'user',
+            parts: [{ text: currentUserText }],
           });
         }
-      }
 
-      // Gemini API requires contents[0].role to be 'user'
-      while (contents.length > 0 && contents[0].role === 'model') {
-        contents.shift();
-      }
+        // STAGE 3 = Gemini request sent (with 30-second timeout)
+        const primaryModel = 'gemini-3.6-flash';
+        const fallbackModel = 'gemini-flash-latest';
+        console.log(`[STAGE 3] Gemini request starting... Model: ${primaryModel} | History blocks: ${contents.length}`);
+        console.log('[STAGE 3] Gemini contents payload:', JSON.stringify(contents, null, 2));
 
-      // Append current user message exactly once
-      const currentUserText = message.trim();
-      if (contents.length === 0 || contents[contents.length - 1].role !== 'user') {
-        contents.push({
-          role: 'user',
-          parts: [{ text: currentUserText }],
-        });
-      } else if (contents[contents.length - 1].parts[0].text !== currentUserText) {
-        contents.push({
-          role: 'user',
-          parts: [{ text: currentUserText }],
-        });
-      }
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Gemini API request timed out after 30 seconds')), 30000)
+        );
 
-      // STAGE 3 = Gemini request sent (with 30-second timeout)
-      const primaryModel = 'gemini-3.6-flash';
-      const fallbackModel = 'gemini-flash-latest';
-      console.log(`[STAGE 3] Gemini request starting... Model: ${primaryModel} | History blocks: ${contents.length}`);
-      console.log('[STAGE 3] Gemini contents payload:', JSON.stringify(contents, null, 2));
+        let response: any = null;
+        let usedModel = primaryModel;
 
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Gemini API request timed out after 30 seconds')), 30000)
-      );
-
-      let response: any = null;
-      let usedModel = primaryModel;
-
-      try {
-        const geminiPromise = aiClient.models.generateContent({
-          model: primaryModel,
-          contents,
-          config: {
-            systemInstruction: buildDynamicSystemInstruction(),
-            temperature: 0.7,
-          },
-        });
-
-        response = await Promise.race([geminiPromise, timeoutPromise]);
-      } catch (primaryErr: any) {
-        console.warn(`[STAGE 3 WARNING] Primary model ${primaryModel} failed (${primaryErr?.message}). Retrying with ${fallbackModel}...`);
-        usedModel = fallbackModel;
         try {
-          const fallbackPromise = aiClient.models.generateContent({
-            model: fallbackModel,
+          const geminiPromise = aiClient.models.generateContent({
+            model: primaryModel,
             contents,
             config: {
               systemInstruction: buildDynamicSystemInstruction(),
               temperature: 0.7,
             },
           });
-          response = await Promise.race([fallbackPromise, timeoutPromise]);
-        } catch (fallbackErr: any) {
-          console.warn('[STAGE 3 WARNING] Gemini API call failed or had insufficient scopes. Generating response from live knowledge base. Error:', fallbackErr?.message || fallbackErr);
-          replyText = getKnowledgeBaseReply(message, historyMsgs);
-        }
-      }
 
-      if (response) {
-        // STAGE 4 = Gemini response received
-        console.log(`[STAGE 4] Gemini response received from model ${usedModel}. Available keys:`, Object.keys(response || {}));
-        if (response?.candidates) {
-          console.log('[STAGE 4] Candidate count:', response.candidates.length);
-        }
-
-        // STAGE 5 = Text successfully extracted
-        let rawText = '';
-        if (typeof response?.text === 'string' && response.text.trim()) {
-          rawText = response.text.trim();
-        } else if (response?.candidates?.[0]?.content?.parts) {
-          rawText = response.candidates[0].content.parts
-            .map((p: any) => p?.text || '')
-            .join('')
-            .trim();
+          response = await Promise.race([geminiPromise, timeoutPromise]);
+        } catch (primaryErr: any) {
+          console.warn(`[STAGE 3 WARNING] Primary model ${primaryModel} failed (${primaryErr?.message}). Retrying with ${fallbackModel}...`);
+          usedModel = fallbackModel;
+          try {
+            const fallbackPromise = aiClient.models.generateContent({
+              model: fallbackModel,
+              contents,
+              config: {
+                systemInstruction: buildDynamicSystemInstruction(),
+                temperature: 0.7,
+              },
+            });
+            response = await Promise.race([fallbackPromise, timeoutPromise]);
+          } catch (fallbackErr: any) {
+            console.warn('[STAGE 3 WARNING] Gemini API call failed or had insufficient scopes. Generating response from live knowledge base. Error:', fallbackErr?.message || fallbackErr);
+            replyText = getKnowledgeBaseReply(message, historyMsgs);
+          }
         }
 
-        console.log('[STAGE 5] Text extraction finished. Character length:', rawText.length);
+        if (response) {
+          // STAGE 4 = Gemini response received
+          console.log(`[STAGE 4] Gemini response received from model ${usedModel}. Available keys:`, Object.keys(response || {}));
+          if (response?.candidates) {
+            console.log('[STAGE 4] Candidate count:', response.candidates.length);
+          }
 
-        if (rawText && rawText.length > 0) {
-          replyText = rawText;
-          console.log('[STAGE 5 SUCCESS] Text successfully extracted from Gemini response.');
+          // STAGE 5 = Text successfully extracted
+          let rawText = '';
+          if (typeof response?.text === 'string' && response.text.trim()) {
+            rawText = response.text.trim();
+          } else if (response?.candidates?.[0]?.content?.parts) {
+            rawText = response.candidates[0].content.parts
+              .map((p: any) => p?.text || '')
+              .join('')
+              .trim();
+          }
+
+          console.log('[STAGE 5] Text extraction finished. Character length:', rawText.length);
+
+          if (rawText && rawText.length > 0) {
+            replyText = rawText;
+            console.log('[STAGE 5 SUCCESS] Text successfully extracted from Gemini response.');
+          }
         }
       }
     }
 
     if (!replyText || !replyText.trim() || replyText === 'TEMPORARY_ERROR') {
-      console.error('[STAGE 5 FAILED] Final reply text is empty or invalid.');
-      return res.status(200).json({
-        message: 'TEMPORARY_ERROR',
-        error: 'STAGE 5 failed: Extracted response text is empty.',
-        conversation: conv,
-      });
+      console.warn('[STAGE 5 FALLBACK] Reply text empty after AI processing. Using live knowledge base fallback.');
+      conv.messages = deduplicateMessages(conv.messages);
+      const historyMsgs = conv.messages.slice(-12);
+      replyText = getKnowledgeBaseReply(message, historyMsgs);
     }
 
     // STAGE 6 = JSON response returned & conversation saved
@@ -499,7 +497,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (err: any) {
     console.error('[Chat API] Critical handler error caught:', err?.stack || err?.message || err);
     
-    const fallbackMessage = "Sorry, I’m temporarily unable to answer right now. Please try again.";
+    let fallbackMessage = getKnowledgeBaseReply(req?.body?.message || '');
     return res.status(200).json({
       message: fallbackMessage,
       reply: fallbackMessage,

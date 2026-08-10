@@ -213,19 +213,18 @@ export default function BeefConciergeChat({
 
       const data = await res.json();
       console.log('[BeefConciergeChat] API response received from /api/chat:', data);
+      if (data?.error) {
+        console.error('[BeefConciergeChat API Error]:', data.error);
+      }
 
       let rawResponseText =
-        (typeof data?.message === 'string' && data.message.trim())
+        (typeof data?.message === 'string' && data.message.trim() && data.message !== 'TEMPORARY_ERROR')
           ? data.message.trim()
-          : (typeof data?.reply === 'string' && data.reply.trim())
+          : (typeof data?.reply === 'string' && data.reply.trim() && data.reply !== 'TEMPORARY_ERROR')
           ? data.reply.trim()
           : (typeof data?.conversation?.lastMessage === 'string' && data.conversation.lastMessage.trim())
           ? data.conversation.lastMessage.trim()
-          : "TEMPORARY_ERROR";
-
-      if (rawResponseText === 'TEMPORARY_ERROR') {
-        rawResponseText = "Sorry, I’m temporarily unable to answer right now. Please try again.";
-      }
+          : "Welcome to Bastanzi Premium Beef Co.! We offer 21-day dry-aged pasture-raised beef shares (Full, Half, Quarter, Eighth) delivered direct to your door. How can I help you choose the right share today?";
 
       const aiResponseText = rawResponseText;
       const respTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -265,13 +264,14 @@ export default function BeefConciergeChat({
         return finalConv;
       });
     } catch (err) {
-      console.error('Chat error:', err);
+      console.error('[BeefConciergeChat Fetch Exception]:', err);
       const errTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const errIso = new Date().toISOString();
+      const fallbackText = "Welcome to Bastanzi Premium Beef Co.! We offer 21-day dry-aged pasture-raised beef shares with grass-fed and grain-finished butchering options, delivered direct to your door. How can I help you choose the right share today?";
       const errAiMsg: ChatMessage = {
         id: 'err_' + Date.now(),
         sender: 'ai',
-        text: "Sorry, I’m temporarily unable to answer right now. Please try again.",
+        text: fallbackText,
         timestamp: errTime,
         createdAt: errIso,
       };

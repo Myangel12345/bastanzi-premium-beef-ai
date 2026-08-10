@@ -9,7 +9,7 @@ import {
   PriceHistoryRecord,
   ContentStoreState,
   PhotoCategoryKey,
-} from '../src/types.ts';
+} from '../src/types';
 
 const getEnv = (key: string): string => {
   return (process.env[key] || process.env[`VITE_${key}`] || '').trim();
