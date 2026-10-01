@@ -133,12 +133,25 @@ export default function BeefConciergeChat({
         const data = await res.json();
         if (data.conversation && Array.isArray(data.conversation.messages) && data.conversation.messages.length > 0) {
           setConversation((prev) => {
+            if (!prev) return data.conversation;
+
+            // If server has no user messages (cold start ephemeral state) but client already has user messages,
+            // preserve the active client-side conversation and do NOT overwrite with a welcome-only reset!
+            const prevUserMsgs = prev.messages.filter((m) => m.sender === 'user');
+            const serverUserMsgs = (data.conversation?.messages || []).filter((m: any) => m.sender === 'user');
+            if (prevUserMsgs.length > 0 && serverUserMsgs.length === 0) {
+              return prev;
+            }
+
             const prevMsgs = prev?.messages || [];
             const serverMsgs = data.conversation?.messages || [];
             const mergedMsgs = deduplicateMessages([...prevMsgs, ...serverMsgs]);
+            const lastMsgText = mergedMsgs.length > 0 ? mergedMsgs[mergedMsgs.length - 1].text : prev.lastMessage;
+
             const updated: ChatConversation = {
-              ...(prev || {}),
+              ...prev,
               ...data.conversation,
+              lastMessage: lastMsgText,
               messages: mergedMsgs,
             };
             try {
@@ -223,19 +236,18 @@ export default function BeefConciergeChat({
         rawResponseText = data.reply.trim();
       } else if (typeof data?.message === 'string' && data.message.trim() && data.message !== 'TEMPORARY_ERROR') {
         rawResponseText = data.message.trim();
-      } else if (typeof data?.conversation?.lastMessage === 'string' && data.conversation.lastMessage.trim() && !data.conversation.lastMessage.startsWith('Welcome to Bastanzi')) {
+      } else if (
+        typeof data?.conversation?.lastMessage === 'string' &&
+        data.conversation.lastMessage.trim() &&
+        !data.conversation.lastMessage.startsWith('Welcome to Bastanzi') &&
+        data.conversation.lastMessage !== 'TEMPORARY_ERROR'
+      ) {
         rawResponseText = data.conversation.lastMessage.trim();
       }
 
       if (!rawResponseText) {
-        const lower = text.toLowerCase();
-        if (lower.includes('freezer') || lower.includes('space') || lower.includes('cu ft') || lower.includes('cubic')) {
-          rawResponseText = "Freezer space rules of thumb: Eighth Share needs 1.5–2 cu ft, Quarter Share needs 4.5–5 cu ft, Half Share needs 8–9 cu ft, Full Share needs 16–18 cu ft.";
-        } else if (lower.includes('hanging') || lower.includes('take-home') || lower.includes('take home') || lower.includes('weight')) {
-          rawResponseText = "Hanging weight is carcass weight before 21 days of dry-aging and trimming. Bastanzi transparently sells exact packaged take-home weight (~60–65% yield of hanging weight). You pay only for exact packaged cut weight!";
-        } else {
-          rawResponseText = "Welcome to Bastanzi Premium Beef Co.! We offer 21-day dry-aged pasture-raised beef shares (Full, Half, Quarter, Eighth) delivered direct to your door. How can I help you choose the right share today?";
-        }
+        rawResponseText =
+          'I am momentarily unable to process that specific request. Please ask again or contact our concierge team directly at info@bastanzibeef.com.';
       }
 
       const aiResponseText = rawResponseText;
@@ -279,17 +291,12 @@ export default function BeefConciergeChat({
       console.error('[BeefConciergeChat Fetch Exception]:', err);
       const errTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const errIso = new Date().toISOString();
-      const lower = text.toLowerCase();
-      let fallbackText = "Welcome to Bastanzi Premium Beef Co.! We offer 21-day dry-aged pasture-raised beef shares with grass-fed and grain-finished butchering options, delivered direct to your door. How can I help you choose the right share today?";
-      if (lower.includes('freezer') || lower.includes('space') || lower.includes('cu ft') || lower.includes('cubic')) {
-        fallbackText = "Freezer space rules of thumb: Eighth Share needs 1.5–2 cu ft, Quarter Share needs 4.5–5 cu ft, Half Share needs 8–9 cu ft, Full Share needs 16–18 cu ft.";
-      } else if (lower.includes('hanging') || lower.includes('take-home') || lower.includes('take home') || lower.includes('weight')) {
-        fallbackText = "Hanging weight is carcass weight before 21 days of dry-aging and trimming. Bastanzi transparently sells exact packaged take-home weight (~60–65% yield of hanging weight). You pay only for exact packaged cut weight!";
-      }
+      const safeErrorText =
+        'I am momentarily having trouble connecting to our concierge server. Please check your connection or try again, or feel free to contact us at info@bastanzibeef.com.';
       const errAiMsg: ChatMessage = {
         id: 'err_' + Date.now(),
         sender: 'ai',
-        text: fallbackText,
+        text: safeErrorText,
         timestamp: errTime,
         createdAt: errIso,
       };
@@ -301,7 +308,7 @@ export default function BeefConciergeChat({
           createdAt: prev?.createdAt || errIso,
           updatedAt: errIso,
           status: prev?.status || 'ai_handled',
-          lastMessage: errAiMsg.text,
+          lastMessage: safeErrorText,
           unreadAdmin: false,
           unreadCustomer: false,
           ...prev,

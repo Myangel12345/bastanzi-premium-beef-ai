@@ -20,7 +20,7 @@ function buildDynamicSystemInstruction(): string {
   const tiersFormatted = tiers
     .map(
       (t) =>
-        `- ${t.title} (${t.id}): ${t.priceRange} (Deposit: $${t.depositAmount}). Weight: ${t.weightLbs} (~${t.approxMeals} meals). Freezer space required: ${t.freezerSpaceRequired}. Status: ${t.availabilityStatus || 'In Stock'} (${t.availabilityNote || 'Available'}). Best for: ${t.bestFor}.`
+        `- ${t.title} (${t.id}): ${t.priceRange} (Deposit: $${t.depositAmount}). Weight: ${t.weightLbs} (~${t.approxMeals} meals). Freezer space required: ${t.freezerSpaceRequired}. Status: ${t.availabilityStatus || 'In Stock'} (${t.availabilityNote || 'Available'}). Best for: ${t.bestFor}. Steaks included: ${t.cutSummary?.steaks?.join(', ') || 'Prime cuts'}. Roasts: ${t.cutSummary?.roastsAndSlow?.join(', ') || 'Artisanal roasts'}. Ground/Specialty: ${t.cutSummary?.groundAndSpecialty?.join(', ') || 'Dry-aged ground beef'}.`
     )
     .join('\n');
 
@@ -42,6 +42,10 @@ CONVERSATION & MEMORY GUIDELINES:
 - When asked follow-up questions (e.g., "How much is the half share?" or "How much freezer space would I need?"), reference previous turns and answer directly for that specific share size (e.g., Half Share is $1,650–$2,085 and needs 8–9 cu. ft. of freezer space).
 - When user asks "Which share size fits my freezer space?", provide the clear breakdown: "Eighth Share needs 1.5–2 cu ft, Quarter Share needs 4.5–5 cu ft, Half Share needs 8–9 cu ft, Full Share needs 16–18 cu ft."
 - When user asks "What is the difference between hanging weight and take-home weight?", explain that hanging weight is carcass weight before 21 days of dry aging and trimming, whereas Bastanzi transparently sells exact packaged take-home weight (~60–65% yield of hanging weight after moisture loss and precision trimming). Customers pay only for take-home cut weight!
+- When asked about pricing for shares smaller than an Eighth Share or custom orders, explain that for custom orders or portions smaller than an Eighth Share (~50–55 lbs), customers should select "Contact for Pricing" on the Beef Shares page or contact the concierge team directly at info@bastanzibeef.com.
+- When asked about prime steaks or cuts included in a Quarter Share, quote the exact steaks from the live store: 4–5 Prime Ribeye Steaks, 4–5 NY Strip Steaks, 2–3 Filet Mignons, and 2 Top Sirloin Steaks.
+- When asked about 100% Grass-Fed vs Grain-Finished cuts, explain that 100% Grass-Fed is leaner, mineral-rich, herbal in flavor, and high in Omega-3s and CLA; Grain-Finished grazes pasture for 85% of life and is finished on local barley and alfalfa for buttery marbling. Full and Half shares also offer a 50/50 Mixed Split!
+- When asked about delivery and shipping, explain that local doorstep delivery across the Phoenix Metro area is free, and nationwide express shipping is $49 in insulated cooler boxes with dry ice, guaranteed 100% frozen arrival.
 - Direct customers toward the website reservation process when appropriate (selecting tier, finishing style, entering address, and placing deposit).
 - NEVER invent prices, availability, shipping promises, policies, or order numbers. Always use the live knowledge base below as the ground truth.
 
@@ -101,11 +105,11 @@ function getIntentTag(msg: string): string {
   const lower = (msg || '').toLowerCase();
   if (lower.includes('freezer') || lower.includes('space') || lower.includes('cubic') || lower.includes('cu. ft') || lower.includes('cu ft')) return 'freezer_space';
   if (lower.includes('hanging') || lower.includes('take-home') || lower.includes('take home') || lower.includes('carcass') || lower.includes('yield')) return 'hanging_vs_takehome';
-  if (lower.includes('price') || lower.includes('cost') || lower.includes('how much') || lower.includes('rate') || lower.includes('deposit')) return 'pricing_deposit';
-  if (lower.includes('grass') || lower.includes('grain') || lower.includes('finishing')) return 'grass_vs_grain';
+  if (lower.includes('price') || lower.includes('pricing') || lower.includes('cost') || lower.includes('how much') || lower.includes('rate') || lower.includes('deposit')) return 'pricing_deposit';
+  if (lower.includes('grass') || lower.includes('grain') || lower.includes('finishing') || lower.includes('finished')) return 'grass_vs_grain';
   if (lower.includes('dry-age') || lower.includes('dry aging') || lower.includes('dry aged')) return 'dry_aging';
   if (lower.includes('cut') || lower.includes('ribeye') || lower.includes('steak') || lower.includes('brisket')) return 'cuts_selection';
-  if (lower.includes('shipping') || lower.includes('delivery')) return 'shipping_delivery';
+  if (lower.includes('shipping') || lower.includes('delivery') || lower.includes('ship') || lower.includes('deliver') || lower.includes('arizona') || lower.includes('phoenix')) return 'shipping_delivery';
   if (lower.includes('reserve') || lower.includes('order')) return 'reservation';
   if (lower.includes('hi') || lower.includes('hello')) return 'greeting';
   return 'general_beef_inquiry';
@@ -116,24 +120,52 @@ function getKnowledgeBaseReply(message: string, historyMsgs: ChatMessage[] = [])
   const liveTiers = liveStore.shareTiers;
 
   const fullTier = liveTiers.find((t) => t.id === 'Full') || {
+    id: 'Full',
+    title: 'Full Beef Share',
     priceRange: '$3,300 – $4,200',
     depositAmount: 500,
     weightLbs: '400 – 440 lbs',
+    cutSummary: {
+      steaks: ['16-20 Prime Ribeyes', '16-20 NY Strips', '8-12 Filet Mignons', '8 Sirloins', '4 Skirt/Flank Steaks'],
+      roastsAndSlow: ['6-8 Chuck & Arm Roasts', '4 Prime Rib Roasts', '2 Full Packer Briskets', '4 Rump Roasts'],
+      groundAndSpecialty: ['180-200 lbs Gourmet Ground Beef'],
+    },
   };
   const halfTier = liveTiers.find((t) => t.id === 'Half') || {
+    id: 'Half',
+    title: 'Half Beef Share',
     priceRange: '$1,650 – $2,085',
     depositAmount: 300,
     weightLbs: '200 – 220 lbs',
+    cutSummary: {
+      steaks: ['8-10 Prime Ribeyes', '8-10 NY Strips', '4-6 Filet Mignons', '4 Sirloins', '2 Skirt/Flank Steaks'],
+      roastsAndSlow: ['3-4 Chuck Roasts', '2 Rib Roasts', '1 Whole Packer Brisket', '2 Rump Roasts'],
+      groundAndSpecialty: ['90-100 lbs Artisan Ground Beef'],
+    },
   };
   const quarterTier = liveTiers.find((t) => t.id === 'Quarter') || {
+    id: 'Quarter',
+    title: 'Quarter Beef Share',
     priceRange: '$850 – $1,050',
     depositAmount: 200,
     weightLbs: '100 – 110 lbs',
+    cutSummary: {
+      steaks: ['4-5 Prime Ribeye Steaks', '4-5 NY Strip Steaks', '2-3 Filet Mignons', '2 Top Sirloin Steaks'],
+      roastsAndSlow: ['2 Chuck Roasts', '1 Rump Roast', '1 Half Brisket or Short Rib Rack'],
+      groundAndSpecialty: ['45-50 lbs Dry-Aged Ground Beef'],
+    },
   };
   const eighthTier = liveTiers.find((t) => t.id === 'Eighth') || {
+    id: 'Eighth',
+    title: 'Eighth Beef Share',
     priceRange: '$450 – $550',
     depositAmount: 100,
     weightLbs: '50 – 55 lbs',
+    cutSummary: {
+      steaks: ['2-3 Prime Ribeyes', '2-3 NY Strips', '1-2 Filet Mignons', '1-2 Sirloins'],
+      roastsAndSlow: ['1 Chuck Roast', '1 Tri-Tip or Sirloin Tip Roast'],
+      groundAndSpecialty: ['20-25 lbs Dry-Aged Ground Beef'],
+    },
   };
 
   const pricesSummary = liveTiers
@@ -152,7 +184,7 @@ function getKnowledgeBaseReply(message: string, historyMsgs: ChatMessage[] = [])
     if (recentText.includes('half')) contextualTopic = 'half';
     else if (recentText.includes('full')) contextualTopic = 'full';
     else if (recentText.includes('quarter')) contextualTopic = 'quarter';
-    else if (recentText.includes('eighth')) contextualTopic = 'eighth';
+    else if (recentText.includes('eighth') || recentText.includes('1/8')) contextualTopic = 'eighth';
   }
 
   const hasPronounRef =
@@ -177,7 +209,15 @@ function getKnowledgeBaseReply(message: string, historyMsgs: ChatMessage[] = [])
 
   const activeTopic = hasPronounRef && !isGeneralQuestion ? contextualTopic : '';
 
-  // 1. Freezer Space Requirements
+  // 1. Requests for shares smaller than an Eighth Share / custom fractions
+  if (
+    (lower.includes('smaller') || lower.includes('less than') || lower.includes('under') || lower.includes('sub-eighth') || lower.includes('custom share')) &&
+    (lower.includes('eighth') || lower.includes('1/8') || lower.includes('share') || lower.includes('size') || lower.includes('pricing') || lower.includes('price'))
+  ) {
+    return 'For custom orders or portions smaller than our Eighth Share (~50–55 lbs), please select "Contact for Pricing" on our Beef Shares page or contact our concierge directly at info@bastanzibeef.com. We can also accommodate custom quarter or half share split allocations!';
+  }
+
+  // 2. Freezer Space Requirements
   if (
     lower.includes('freezer') ||
     lower.includes('space') ||
@@ -191,13 +231,13 @@ function getKnowledgeBaseReply(message: string, historyMsgs: ChatMessage[] = [])
       return `For a Full Beef Share (~${fullTier.weightLbs}), you will need 16–18 cu ft of freezer space (a large chest freezer).`;
     } else if (lower.includes('quarter') || activeTopic === 'quarter') {
       return `For a Quarter Beef Share (~${quarterTier.weightLbs}), you will need 4.5–5 cu ft of freezer space (a small chest freezer or upright).`;
-    } else if (lower.includes('eighth') || activeTopic === 'eighth') {
+    } else if (lower.includes('eighth') || lower.includes('1/8') || activeTopic === 'eighth') {
       return `An Eighth Beef Share (~${eighthTier.weightLbs}) needs 1.5–2 cu ft of freezer space and fits right in a standard kitchen refrigerator freezer.`;
     }
     return 'Freezer space rules of thumb: Eighth Share needs 1.5–2 cu ft, Quarter Share needs 4.5–5 cu ft, Half Share needs 8–9 cu ft, Full Share needs 16–18 cu ft.';
   }
 
-  // 2. Hanging Weight vs Take-Home Weight
+  // 3. Hanging Weight vs Take-Home Weight
   if (
     lower.includes('hanging') ||
     lower.includes('take-home') ||
@@ -210,89 +250,141 @@ function getKnowledgeBaseReply(message: string, historyMsgs: ChatMessage[] = [])
     return 'Hanging weight is carcass weight before 21 days of dry-aging and trimming. Bastanzi transparently sells exact packaged take-home weight (~60–65% yield of hanging weight). You pay only for exact packaged cut weight!';
   }
 
-  // 3. Pricing and Deposits
+  // 4. Cuts and Prime Steaks (Tier-Specific & General)
   if (
-    lower.includes('price') ||
-    lower.includes('cost') ||
-    lower.includes('how much') ||
-    lower.includes('rate') ||
-    lower.includes('deposit')
+    !lower.includes('grass') &&
+    !lower.includes('grain') &&
+    (
+      lower.includes('cut') ||
+      lower.includes('steak') ||
+      lower.includes('ribeye') ||
+      lower.includes('filet') ||
+      lower.includes('strip') ||
+      lower.includes('brisket') ||
+      lower.includes('roast') ||
+      lower.includes('ground') ||
+      lower.includes('included')
+    )
   ) {
-    if (lower.includes('smaller than') || lower.includes('less than') || lower.includes('under') && (lower.includes('eighth') || lower.includes('1/8'))) {
-      return 'For custom orders or portions smaller than our Eighth Share (~50–55 lbs), please select "Contact for Pricing" on our Beef Shares page or contact our concierge directly at info@bastanzibeef.com.';
+    if (lower.includes('quarter') || activeTopic === 'quarter') {
+      const qSteaks = quarterTier.cutSummary?.steaks?.join(', ') || '4-5 Prime Ribeye Steaks, 4-5 NY Strip Steaks, 2-3 Filet Mignons, 2 Top Sirloin Steaks';
+      const qRoasts = quarterTier.cutSummary?.roastsAndSlow?.join(', ') || '2 Chuck Roasts, 1 Rump Roast, 1 Half Brisket or Short Rib Rack';
+      const qGround = quarterTier.cutSummary?.groundAndSpecialty?.join(', ') || '45-50 lbs Dry-Aged Ground Beef';
+      if (lower.includes('steak') || lower.includes('prime')) {
+        return `In our Quarter Beef Share (~${quarterTier.weightLbs}), the prime steaks included are: ${qSteaks}. The share also includes artisanal roasts (${qRoasts}) and gourmet ground beef (${qGround}).`;
+      }
+      return `Our Quarter Beef Share (~${quarterTier.weightLbs}) includes: Prime Steaks (${qSteaks}), Roasts & Slow Braising (${qRoasts}), and Ground Beef (${qGround}).`;
     }
+
     if (lower.includes('half') || activeTopic === 'half') {
-      return `Our Half Beef Share is priced at ${halfTier.priceRange} ($${halfTier.depositAmount} deposit) for ~${halfTier.weightLbs} of 21-day dry-aged packaged beef. It includes a custom master butcher consultation for your favorite cuts.`;
-    } else if (lower.includes('full') || activeTopic === 'full') {
-      return `Our Full Beef Share is priced at ${fullTier.priceRange} ($${fullTier.depositAmount} deposit) for ~${fullTier.weightLbs} of packaged beef with custom butcher options.`;
-    } else if (lower.includes('quarter') || activeTopic === 'quarter') {
-      return `Our Quarter Beef Share is priced at ${quarterTier.priceRange} ($${quarterTier.depositAmount} deposit) for ~${quarterTier.weightLbs} of packaged beef.`;
-    } else if (lower.includes('eighth') || activeTopic === 'eighth') {
-      return `Our Eighth Beef Share is priced at ${eighthTier.priceRange} ($${eighthTier.depositAmount} deposit) for ~${eighthTier.weightLbs} of packaged beef.`;
+      const hSteaks = halfTier.cutSummary?.steaks?.join(', ') || '8-10 Prime Ribeye Steaks, 8-10 NY Strip Steaks, 4-6 Filet Mignons, 4 Sirloins, 2 Skirt/Flank Steaks';
+      const hRoasts = halfTier.cutSummary?.roastsAndSlow?.join(', ') || '3-4 Chuck Roasts, 2 Rib Roasts, 1 Whole Packer Brisket, 2 Rump Roasts, 3 Short Rib Racks';
+      const hGround = halfTier.cutSummary?.groundAndSpecialty?.join(', ') || '90-100 lbs Artisan Ground Beef';
+      if (lower.includes('steak') || lower.includes('prime')) {
+        return `In our Half Beef Share (~${halfTier.weightLbs}), the prime steaks included are: ${hSteaks}. Half shares also include a Master Butcher consult for custom cut specifications!`;
+      }
+      return `Our Half Beef Share (~${halfTier.weightLbs}) includes: Prime Steaks (${hSteaks}), Roasts (${hRoasts}), and Ground Beef (${hGround}), with a Master Butcher custom consult.`;
     }
-    return `Our live Beef Share rates are: ${pricesSummary}. Local delivery is $${liveStore.fees.localDeliveryFee} and nationwide express shipping is $${liveStore.fees.nationwideShippingFee}.`;
-  }
 
-  // 4. Grass-Fed vs Grain-Finished
-  if (lower.includes('grass') || lower.includes('grain') || lower.includes('finishing') || lower.includes('marbling')) {
-    return 'We offer both 100% Grass-Fed (leaner, mineral-rich, herbal flavor high in Omega-3s) and Grain-Finished (pasture-raised for 85% of life, finished on local barley & alfalfa for rich, buttery marbling). Full and Half shares also offer a 50/50 Mixed Split!';
-  }
+    if (lower.includes('full') || activeTopic === 'full') {
+      const fSteaks = fullTier.cutSummary?.steaks?.join(', ') || '16-20 Prime Ribeye Steaks, 16-20 NY Strip Steaks, 8-12 Filet Mignons, 8 Sirloins, 4 Skirt/Flank Steaks';
+      const fRoasts = fullTier.cutSummary?.roastsAndSlow?.join(', ') || '6-8 Chuck Roasts, 4 Prime Rib Roasts, 2 Full Packer Briskets, 4 Rump Roasts, 6 Short Rib Racks';
+      const fGround = fullTier.cutSummary?.groundAndSpecialty?.join(', ') || '180-200 lbs Gourmet Ground Beef';
+      if (lower.includes('steak') || lower.includes('prime')) {
+        return `In our Full Beef Share (~${fullTier.weightLbs}), the prime steaks included are: ${fSteaks}. Full shares feature 100% custom butchering for all steaks and roasts!`;
+      }
+      return `Our Full Beef Share (~${fullTier.weightLbs}) includes: Prime Steaks (${fSteaks}), Roasts (${fRoasts}), and Ground Beef (${fGround}), with full custom butchery.`;
+    }
 
-  // 5. 21-Day Dry Aging
-  if (lower.includes('dry-age') || lower.includes('dry aging') || lower.includes('dry aged') || lower.includes('aging') || lower.includes('aged')) {
-    return 'All Bastanzi beef undergoes our signature 21-day artisanal dry aging in temperature- and humidity-controlled cedar chambers. This natural enzymatic aging concentrates rich steakhouse beef flavor and breaks down connective tissue for unparalleled tenderness.';
-  }
+    if (lower.includes('eighth') || lower.includes('1/8') || activeTopic === 'eighth') {
+      const eSteaks = eighthTier.cutSummary?.steaks?.join(', ') || '2-3 Prime Ribeye Steaks, 2-3 NY Strip Steaks, 1-2 Filet Mignons, 1-2 Sirloins';
+      return `In our Eighth Beef Share (~${eighthTier.weightLbs}), the prime steaks included are: ${eSteaks}. It also includes 1 Chuck Roast, 1 Tri-Tip or Sirloin Tip Roast, and 20-25 lbs of single-source gourmet ground beef in 1lb vacuum packs.`;
+    }
 
-  // 6. Cuts Included
-  if (
-    lower.includes('cut') ||
-    lower.includes('ribeye') ||
-    lower.includes('brisket') ||
-    lower.includes('filet') ||
-    lower.includes('steak') ||
-    lower.includes('roast') ||
-    lower.includes('ground')
-  ) {
     return 'All of our shares include a balanced selection of 21-day dry-aged Prime Steaks (Ribeyes, NY Strips, Filet Mignon, Sirloins), Roasts & Slow Cuts (Chuck Roast, Brisket, Short Ribs, Rump Roast), and Gourmet Ground Beef in 1lb vacuum packs. Full and Half shares include a Master Butcher consult for custom specs.';
   }
 
-  // 7. Shipping & Phoenix Metro Delivery
+  // 5. Grass-Fed vs Grain-Finished
+  if (
+    lower.includes('grass') ||
+    lower.includes('grain') ||
+    lower.includes('finishing') ||
+    lower.includes('finished') ||
+    lower.includes('marbling') ||
+    lower.includes('pasture')
+  ) {
+    return 'We offer both 100% Grass-Fed (leaner, mineral-rich, herbal flavor high in Omega-3s) and Grain-Finished (pasture-raised for 85% of life, finished on local barley & alfalfa for rich, buttery marbling). Full and Half shares also offer a 50/50 Mixed Split!';
+  }
+
+  // 6. Shipping & Phoenix Metro Delivery
   if (
     lower.includes('shipping') ||
     lower.includes('delivery') ||
     lower.includes('ship') ||
     lower.includes('deliver') ||
     lower.includes('phoenix') ||
-    lower.includes('arizona')
+    lower.includes('arizona') ||
+    lower.includes('nationwide')
   ) {
     return 'We offer free local doorstep delivery across the Phoenix Metro area (Phoenix, Scottsdale, Paradise Valley, Gilbert, Chandler, Mesa, Cave Creek). Nationwide express shipping is $49 in insulated cooler boxes with dry ice, guaranteed 100% frozen arrival!';
   }
 
-  // 8. Reservation & Ordering Process
+  // 7. Pricing and Deposits (Matches 'pricing', 'price', 'cost', 'how much', 'rate', 'deposit')
+  if (
+    lower.includes('price') ||
+    lower.includes('pricing') ||
+    lower.includes('cost') ||
+    lower.includes('how much') ||
+    lower.includes('rate') ||
+    lower.includes('deposit')
+  ) {
+    if (lower.includes('half') || activeTopic === 'half') {
+      return `Our Half Beef Share is priced at ${halfTier.priceRange} ($${halfTier.depositAmount} deposit) for ~${halfTier.weightLbs} of 21-day dry-aged packaged beef. It includes a custom master butcher consultation for your favorite cuts.`;
+    } else if (lower.includes('full') || activeTopic === 'full') {
+      return `Our Full Beef Share is priced at ${fullTier.priceRange} ($${fullTier.depositAmount} deposit) for ~${fullTier.weightLbs} of packaged beef with custom butcher options.`;
+    } else if (lower.includes('quarter') || activeTopic === 'quarter') {
+      return `Our Quarter Beef Share is priced at ${quarterTier.priceRange} ($${quarterTier.depositAmount} deposit) for ~${quarterTier.weightLbs} of packaged beef.`;
+    } else if (lower.includes('eighth') || lower.includes('1/8') || activeTopic === 'eighth') {
+      return `Our Eighth Beef Share is priced at ${eighthTier.priceRange} ($${eighthTier.depositAmount} deposit) for ~${eighthTier.weightLbs} of packaged beef.`;
+    }
+    return `Our live Beef Share rates are: ${pricesSummary}. Local delivery is $${liveStore.fees.localDeliveryFee} and nationwide express shipping is $${liveStore.fees.nationwideShippingFee}.`;
+  }
+
+  // 8. 21-Day Dry Aging
+  if (
+    lower.includes('dry-age') ||
+    lower.includes('dry aging') ||
+    lower.includes('dry aged') ||
+    lower.includes('aging') ||
+    lower.includes('aged')
+  ) {
+    return 'All Bastanzi beef undergoes our signature 21-day artisanal dry aging in temperature- and humidity-controlled cedar chambers. This natural enzymatic aging concentrates rich steakhouse beef flavor and breaks down connective tissue for unparalleled tenderness.';
+  }
+
+  // 9. Reservation & Ordering Process
   if (
     lower.includes('reserve') ||
     lower.includes('order') ||
     lower.includes('buy') ||
-    lower.includes('deposit') ||
     lower.includes('how to')
   ) {
     return `To reserve a share, click 'Reserve Share' on our website, select your size (Full, Half, Quarter, or Eighth) and finishing choice (Grass-Fed or Grain-Finished), enter your delivery details, and pay a small deposit ($${eighthTier.depositAmount}–$${fullTier.depositAmount}) to lock your harvest allocation.`;
   }
 
-  // 9. Specific Share Size Mentions
-  if (lower.includes('half share') || lower.includes('half')) {
+  // 10. Specific Share Size Mentions without cuts or pricing
+  if (lower.includes('half share') || (lower.includes('half') && lower.includes('share'))) {
     return `Our Half Beef Share gives you ~${halfTier.weightLbs} of packaged 21-day dry-aged beef (${halfTier.priceRange}, $${halfTier.depositAmount} deposit). It requires 8–9 cu ft of freezer space and includes a custom master butcher consult.`;
   }
 
-  if (lower.includes('full share') || lower.includes('full')) {
+  if (lower.includes('full share') || (lower.includes('full') && lower.includes('share'))) {
     return `Our Full Beef Share gives you ~${fullTier.weightLbs} of packaged 21-day dry-aged beef (${fullTier.priceRange}, $${fullTier.depositAmount} deposit). It requires 16–18 cu ft of freezer space and custom butchering options.`;
   }
 
-  if (lower.includes('quarter share') || lower.includes('quarter')) {
+  if (lower.includes('quarter share') || (lower.includes('quarter') && lower.includes('share'))) {
     return `Our Quarter Beef Share gives you ~${quarterTier.weightLbs} of packaged beef (${quarterTier.priceRange}, $${quarterTier.depositAmount} deposit) and needs 4.5–5 cu ft of freezer space.`;
   }
 
-  if (lower.includes('eighth share') || lower.includes('eighth')) {
+  if (lower.includes('eighth share') || ((lower.includes('eighth') || lower.includes('1/8')) && lower.includes('share'))) {
     return `Our Eighth Beef Share gives you ~${eighthTier.weightLbs} of packaged beef (${eighthTier.priceRange}, $${eighthTier.depositAmount} deposit) and fits in 1.5–2 cu ft of standard refrigerator freezer space.`;
   }
 
@@ -300,7 +392,7 @@ function getKnowledgeBaseReply(message: string, historyMsgs: ChatMessage[] = [])
     return `We offer four pasture-raised 21-day dry-aged beef share sizes: Full Share (${fullTier.weightLbs}, ${fullTier.priceRange}), Half Share (${halfTier.weightLbs}, ${halfTier.priceRange}), Quarter Share (${quarterTier.weightLbs}, ${quarterTier.priceRange}), and Eighth Share (${eighthTier.weightLbs}, ${eighthTier.priceRange}). All shares feature 100% grass-fed or grain-finished options.`;
   }
 
-  // 10. Greetings
+  // 11. Greetings
   if (
     lower.includes('hi') ||
     lower.includes('hello') ||
@@ -579,14 +671,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           });
         }
 
-        const primaryModel = 'gemini-3.6-flash';
+        // Use valid models supported by @google/genai TypeScript SDK
+        const primaryModel = 'gemini-3.8-flash';
         const fallbackModel = 'gemini-flash-latest';
         console.log(
           `[STAGE 3] Gemini request starting... Model: ${primaryModel} | History blocks: ${contents.length}`
         );
 
+        // Safe timeout of 6 seconds to prevent exceeding Vercel 10s serverless limit
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Gemini API request timed out after 30 seconds')), 30000)
+          setTimeout(() => reject(new Error('Gemini API request timed out after 6 seconds')), 6000)
         );
 
         let response: any = null;
