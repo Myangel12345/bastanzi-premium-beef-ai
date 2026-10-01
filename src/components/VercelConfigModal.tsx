@@ -88,7 +88,7 @@ export default function VercelConfigModal({ isOpen, onClose }: VercelConfigModal
         </div>
 
         <div className="mt-6 flex justify-between items-center text-xs text-zinc-500">
-          <span>Environment variables: SUPABASE_URL, SUPABASE_ANON_KEY, RESEND_API_KEY</span>
+          <span>Environment variables: SUPABASE_URL, SUPABASE_ANON_KEY, RESEND_API_KEY, RESEND_NOTIFICATION_EMAIL</span>
           <button
             onClick={onClose}
             className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold rounded-lg text-white"

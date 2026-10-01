@@ -14,5 +14,8 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     time: new Date().toISOString(),
     supabaseConfigured: Boolean(process.env.SUPABASE_URL),
     resendConfigured: Boolean(process.env.RESEND_API_KEY),
+    resendNotificationEmailConfigured: Boolean(
+      process.env.RESEND_NOTIFICATION_EMAIL || process.env.NOTIFICATION_EMAIL
+    ),
   });
 }

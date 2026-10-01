@@ -208,6 +208,7 @@ export default function BeefConciergeChat({
         body: JSON.stringify({
           message: text,
           conversationId,
+          history: conversation?.messages || [],
         }),
       });
 
@@ -217,14 +218,25 @@ export default function BeefConciergeChat({
         console.error('[BeefConciergeChat API Error]:', data.error);
       }
 
-      let rawResponseText =
-        (typeof data?.message === 'string' && data.message.trim() && data.message !== 'TEMPORARY_ERROR')
-          ? data.message.trim()
-          : (typeof data?.reply === 'string' && data.reply.trim() && data.reply !== 'TEMPORARY_ERROR')
-          ? data.reply.trim()
-          : (typeof data?.conversation?.lastMessage === 'string' && data.conversation.lastMessage.trim())
-          ? data.conversation.lastMessage.trim()
-          : "Welcome to Bastanzi Premium Beef Co.! We offer 21-day dry-aged pasture-raised beef shares (Full, Half, Quarter, Eighth) delivered direct to your door. How can I help you choose the right share today?";
+      let rawResponseText = '';
+      if (typeof data?.reply === 'string' && data.reply.trim() && data.reply !== 'TEMPORARY_ERROR') {
+        rawResponseText = data.reply.trim();
+      } else if (typeof data?.message === 'string' && data.message.trim() && data.message !== 'TEMPORARY_ERROR') {
+        rawResponseText = data.message.trim();
+      } else if (typeof data?.conversation?.lastMessage === 'string' && data.conversation.lastMessage.trim() && !data.conversation.lastMessage.startsWith('Welcome to Bastanzi')) {
+        rawResponseText = data.conversation.lastMessage.trim();
+      }
+
+      if (!rawResponseText) {
+        const lower = text.toLowerCase();
+        if (lower.includes('freezer') || lower.includes('space') || lower.includes('cu ft') || lower.includes('cubic')) {
+          rawResponseText = "Freezer space rules of thumb: Eighth Share needs 1.5–2 cu ft, Quarter Share needs 4.5–5 cu ft, Half Share needs 8–9 cu ft, Full Share needs 16–18 cu ft.";
+        } else if (lower.includes('hanging') || lower.includes('take-home') || lower.includes('take home') || lower.includes('weight')) {
+          rawResponseText = "Hanging weight is carcass weight before 21 days of dry-aging and trimming. Bastanzi transparently sells exact packaged take-home weight (~60–65% yield of hanging weight). You pay only for exact packaged cut weight!";
+        } else {
+          rawResponseText = "Welcome to Bastanzi Premium Beef Co.! We offer 21-day dry-aged pasture-raised beef shares (Full, Half, Quarter, Eighth) delivered direct to your door. How can I help you choose the right share today?";
+        }
+      }
 
       const aiResponseText = rawResponseText;
       const respTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -267,7 +279,13 @@ export default function BeefConciergeChat({
       console.error('[BeefConciergeChat Fetch Exception]:', err);
       const errTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const errIso = new Date().toISOString();
-      const fallbackText = "Welcome to Bastanzi Premium Beef Co.! We offer 21-day dry-aged pasture-raised beef shares with grass-fed and grain-finished butchering options, delivered direct to your door. How can I help you choose the right share today?";
+      const lower = text.toLowerCase();
+      let fallbackText = "Welcome to Bastanzi Premium Beef Co.! We offer 21-day dry-aged pasture-raised beef shares with grass-fed and grain-finished butchering options, delivered direct to your door. How can I help you choose the right share today?";
+      if (lower.includes('freezer') || lower.includes('space') || lower.includes('cu ft') || lower.includes('cubic')) {
+        fallbackText = "Freezer space rules of thumb: Eighth Share needs 1.5–2 cu ft, Quarter Share needs 4.5–5 cu ft, Half Share needs 8–9 cu ft, Full Share needs 16–18 cu ft.";
+      } else if (lower.includes('hanging') || lower.includes('take-home') || lower.includes('take home') || lower.includes('weight')) {
+        fallbackText = "Hanging weight is carcass weight before 21 days of dry-aging and trimming. Bastanzi transparently sells exact packaged take-home weight (~60–65% yield of hanging weight). You pay only for exact packaged cut weight!";
+      }
       const errAiMsg: ChatMessage = {
         id: 'err_' + Date.now(),
         sender: 'ai',

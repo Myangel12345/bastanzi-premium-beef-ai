@@ -24,6 +24,7 @@ export interface ChatConversation {
   unreadCustomer: boolean;
   messages: ChatMessage[];
   associatedOrderId?: string;
+  escalationNotified?: boolean;
 }
 
 const STORE_PATH = path.join('/tmp', 'bastanzi_chats.json');

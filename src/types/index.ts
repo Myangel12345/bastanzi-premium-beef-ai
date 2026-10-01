@@ -170,6 +170,7 @@ export interface ChatConversation {
   unreadCustomer: boolean;
   messages: ChatMessage[];
   associatedOrderId?: string;
+  escalationNotified?: boolean;
 }
 
 export type PhotoCategoryKey =
